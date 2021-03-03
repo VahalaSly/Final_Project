@@ -41,3 +41,4 @@ df = pd.DataFrame({'Id': Id, 'Name': Name, 'State': State, 'Depth': Depth,
                    'Type': Type, 'MessageType': MessageType,'Message': Message,
                    'Successors': Successors})
 print(tabulate(df, headers='keys', tablefmt='psql', showindex='false'))
+df.to_excel('summary.xlsx', index=None)
