@@ -1785,6 +1785,9 @@ C:\Program Files\KNIME\\plugins/org.knime.binary.jre.win32.x86_64_1.8.0.252-b09/
 				<executionStatistics executionDurationSinceStart="936" lastExecutionDuration="936" executionDurationSinceReset="936" executionCountSinceReset="1" executionCountSinceStart="1" lastExecutionStartTime="2021-03-05 16:24:33 +0000"/>
 			</node>
 			<node id="2" name="Partitioning" type="Manipulator" state="EXECUTED" graphDepth="1" annotation="80% for training &#xa;20 % for testing">
+				<nodeMessage type="WARNING">
+					<message>There were missing values in the reference or in the prediction class columns.</message>
+				</nodeMessage>
 				<factoryKey className="org.knime.base.node.preproc.partition.PartitionNodeFactory"/>
 				<settings>
 					<setting key="method" value="Relative" type="xstring"/>
