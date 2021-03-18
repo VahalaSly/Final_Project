@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+from skmultiflow.meta import AdaptiveRandomForestRegressor
 import matplotlib.pyplot as plt
 import pickle
 
@@ -9,14 +10,6 @@ import pickle
 def save_adaptive_classifier(filename, arfc_instance):
     file_object = open(filename, 'wb')
     pickle.dump(arfc_instance, file_object)
-
-
-def get_labels_and_features(dataframe):
-    labels = np.array(dataframe['is_executed'])
-    features = dataframe.drop('is_executed', axis=1)
-    feature_columns = list(features.columns)
-    features = np.array(features)
-    return labels, features, feature_columns
 
 
 def get_numerical_feature_importance(rf, feature_columns):
@@ -29,7 +22,7 @@ def get_numerical_feature_importance(rf, feature_columns):
     return importance_list, feature_importance
 
 
-def show_graph(importance, feature_columns):
+def show_graph(importance, feature_headers):
     # Set the style
     plt.style.use('fivethirtyeight')
     # list of x locations for plotting
@@ -37,7 +30,7 @@ def show_graph(importance, feature_columns):
     # Make a bar chart
     plt.bar(x_values, importance, orientation='vertical')
     # Tick labels for x axis
-    plt.xticks(x_values, feature_columns, rotation='vertical')
+    plt.xticks(x_values, feature_headers, rotation='vertical')
     # Axis labels and title
     plt.ylabel('Importance')
     plt.xlabel('Variable')
@@ -45,14 +38,7 @@ def show_graph(importance, feature_columns):
     plt.show()
 
 
-def main():
-    arf_filename = 'adaptive_classifier.txt'
-    data_frame = pd.read_csv('csvs/summary.csv')
-    # hot-encode categorical columns
-    numeric_dataset = pd.get_dummies(data_frame,
-                                     columns=["parent_workflow", "class_name"])
-
-    labels, features, feature_columns = get_labels_and_features(numeric_dataset)
+def random_forest(features, labels, feature_headers):
     train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=0.25)
     rf = RandomForestRegressor(n_estimators=1000, random_state=42)
 
@@ -64,48 +50,47 @@ def main():
     errors = abs(predictions - test_labels)
     print('Mean Absolute Error:', round(np.mean(errors), 2))
 
-    importance_list, features_importance = get_numerical_feature_importance(rf, feature_columns)
+    importance_list, features_importance = get_numerical_feature_importance(rf, feature_headers)
     [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in features_importance]
 
-    show_graph(importance_list, feature_columns)
-
-    # try:
-    #     filehandler = open(arf_filename, 'rb')
-    #     arf = pickle.load(filehandler)
-    # except (FileNotFoundError, EOFError):
-    #     arf = AdaptiveRandomForestClassifier()
-    # arf.predict(numeric_dataset)
-    # save_adaptive_classifier(arf_filename, arf)
-    # print('Adaptive Random Forest ensemble classifier example')
-    # print(arf.get_info())
+    show_graph(importance_list, feature_headers)
 
 
-def example_adaptive():
+def get_adaptive_instance(filename):
+    try:
+        filehandler = open(filename, 'rb')
+        arf = pickle.load(filehandler)
+    except (FileNotFoundError, EOFError):
+        arf = AdaptiveRandomForestRegressor(n_estimators=1000, random_state=42)
+    return arf
+
+
+def adaptive_random_forest(features, labels, feature_headers, filename):
     # Imports
-    from skmultiflow.data import RegressionGenerator
-    from skmultiflow.meta import AdaptiveRandomForestRegressor
     import numpy as np
-    # Setup a data stream
-    stream = RegressionGenerator(random_state=1, n_samples=200)
-    # Prepare stream for use
-    # Setup the Adaptive Random Forest regressor
-    arf_reg = AdaptiveRandomForestRegressor(random_state=123456)
-    # Auxiliary variables to control loop and track performance
-    n_samples = 0
-    max_samples = 200
-    y_pred = np.zeros(max_samples)
-    y_true = np.zeros(max_samples)
-    # Run test-then-train loop for max_samples and while there is data
-    while n_samples < max_samples and stream.has_more_samples():
-        X, y = stream.next_sample()
-        y_true[n_samples] = y[0]
-        y_pred[n_samples] = arf_reg.predict(X)[0]
-        arf_reg.partial_fit(X, y)
-        n_samples += 1
-    # Display results
-    print('Adaptive Random Forest regressor example')
-    print('{} samples analyzed.'.format(n_samples))
-    print('Mean absolute error: {}'.format(np.mean(np.abs(y_true - y_pred))))
+    arf = get_adaptive_instance(filename)
+    arf.fit(features, labels)
+    predictions = arf.predict(features)
+    errors = abs(predictions - labels)
+    print('Mean Absolute Error:', round(np.mean(errors), 2))
+    importance_list, features_importance = get_numerical_feature_importance(arf, feature_headers)
+    [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in features_importance]
+
+
+def main():
+    arf_filename = 'adaptive_classifier.txt'
+    data_frame = pd.read_csv('csvs/summary.csv')
+    # hot-encode categorical columns
+    numeric_dataset = pd.get_dummies(data_frame,
+                                     columns=["parent_workflow", "class_name"])
+
+    labels = np.array(numeric_dataset['is_executed'])
+    features = numeric_dataset.drop('is_executed', axis=1)
+    feature_headers = list(features.columns)
+    features = np.array(features)
+
+    random_forest(features, labels, feature_headers)
+    # adaptive_random_forest(features, labels, feature_headers, arf_filename)
 
 
 if __name__ == "__main__":
