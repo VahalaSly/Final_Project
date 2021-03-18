@@ -5,7 +5,20 @@ from tabulate import tabulate
 from WAS.Node import Node
 
 
-def get_workflow_nodes(root):
+def xml_to_tree(dir_path):
+    nodes_trees = []
+    for filename in os.listdir(dir_path):
+        if filename.endswith('.xml') and ("processed" not in filename):
+            fullname = os.path.join(dir_path, filename)
+            processed_name = os.path.join(dir_path, "processed_{}".format(filename))
+            xtree = ET.parse(fullname)
+            # add prefix so that file is not processed again!
+            # os.rename(fullname, processed_name)
+            nodes_trees.append(xtree)
+    return nodes_trees
+
+
+def parse_workflow_nodes(root):
     nodes_dict = {}
     parent_workflow = ""
     for workflow in root.iter('workflow'):
@@ -42,32 +55,23 @@ def get_workflow_nodes(root):
     return nodes_dict
 
 
-def xml_to_tree(dir_path):
-    nodes_trees = []
-    for filename in os.listdir(dir_path):
-        if filename.endswith('.xml'):
-            fullname = os.path.join(dir_path, filename)
-            xtree = ET.parse(fullname)
-            nodes_trees.append(xtree)
-    return nodes_trees
-
-
-def infer_predecessor(workflow_nodes):
-    for id, node in workflow_nodes.items():
-        for successor in node.successors:
-            workflow_nodes[successor].predecessors.append(node)
-
-
-if __name__ == "__main__":
+def main():
     dir_path = "xml_files/random_tree"
     trees = xml_to_tree(dir_path)
     nodes = []
     for tree in trees:
-        workflow_nodes = get_workflow_nodes(tree.getroot())
-        infer_predecessor(workflow_nodes)
+        workflow_nodes = parse_workflow_nodes(tree.getroot())
         for id, node in workflow_nodes.items():
+            node.infer_predecessor(workflow_nodes)
             nodes.append(node)
 
-    df = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes])
-    print(tabulate(df, headers='keys', tablefmt='psql', showindex='false'))
-    df.to_csv('csvs/summary.csv', index=None)
+    data_frame = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes]).fillna(0)
+    print(tabulate(data_frame, headers='keys', tablefmt='psql', showindex='false'))
+    # if os.path.isfile('csvs/summary.csv'):
+    #     data_frame.to_csv('csvs/summary.csv', mode='a', index=False, header=False)
+    # else:
+    data_frame.to_csv('csvs/summary.csv', index=False)
+
+
+if __name__ == "__main__":
+    main()
