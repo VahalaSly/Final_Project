@@ -6,24 +6,25 @@ from WAS.Node import Node
 
 
 def get_workflow_nodes(root):
-    nodes = {}
+    nodes_dict = {}
     parent_workflow = ""
     for workflow in root.iter('workflow'):
         parent_workflow = workflow.attrib['name']
-    for node in root.iter('node'):
+    for node_tag in root.iter('node'):
         successors = []
-        state = node.attrib['state']
-        node_id = node.attrib['id']
-        graph_depth = node.attrib['graphDepth']
+        state = node_tag.attrib['state']
+        node_id = node_tag.attrib['id']
+        graph_depth = node_tag.attrib['graphDepth']
         warning = False
         error = False
-        for successor in node.iter("successor"):
+        for successor in node_tag.iter("successor"):
             successors.append(successor.attrib['id'])
-        for factoryKey in node.iter("factoryKey"):
+        for factoryKey in node_tag.iter("factoryKey"):
             class_name = factoryKey.attrib['className']
-        for executionStatistics in node.iter("executionStatistics"):
+        for executionStatistics in node_tag.iter("executionStatistics"):
             execution_duration = executionStatistics.attrib['lastExecutionDuration']
-        for nodeMessage in node.iter('nodeMessage'):
+            execution_datetime = executionStatistics.attrib['lastExecutionStartTime']
+        for nodeMessage in node_tag.iter('nodeMessage'):
             if nodeMessage.attrib['type'] == "WARNING":
                 warning = True
             if nodeMessage.attrib['type'] == "ERROR":
@@ -35,9 +36,10 @@ def get_workflow_nodes(root):
                         state=state, successors=successors,
                         warnings=warning,
                         errors=error,
-                        execution_duration=execution_duration)
-        nodes[node_id] = new_node
-    return nodes
+                        execution_duration=execution_duration,
+                        execution_datetime=execution_datetime)
+        nodes_dict[node_id] = new_node
+    return nodes_dict
 
 
 def xml_to_tree(dir_path):
@@ -66,6 +68,6 @@ if __name__ == "__main__":
         for id, node in workflow_nodes.items():
             nodes.append(node)
 
-    df = pd.DataFrame.from_records([node.to_dict() for node in nodes])
+    df = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes])
     print(tabulate(df, headers='keys', tablefmt='psql', showindex='false'))
     df.to_csv('csvs/summary.csv', index=None)
