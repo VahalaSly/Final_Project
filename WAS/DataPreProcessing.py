@@ -10,7 +10,8 @@ def xml_to_tree(filename):
         try:
             xtree = ET.parse(filename)
             return xtree
-        except ET.ParseError:
+        except ET.ParseError as e:
+            print(e)
             return False
     return False
 
@@ -66,6 +67,6 @@ def main(xml_path, csv_path):
         return False
 
     data_frame = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes]).fillna(0)
-    print(tabulate(data_frame, headers='keys', tablefmt='psql', showindex='false'))
+    # print(tabulate(data_frame, headers='keys', tablefmt='psql', showindex='false'))
     data_frame.to_csv(csv_path, index=False)
     return True

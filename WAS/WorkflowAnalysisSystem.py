@@ -23,7 +23,7 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
 
 def main():
     xml_file_path = get_arguments().filepath
-    csv_data_path = 'csvs/latest_execution.csv'
+    csv_data_path = 'csvs/current_workflow.csv'
     historical_data_path = 'csvs/historical_data.csv'
     is_dpp_successful = DataPreProcessing.main(xml_file_path, csv_data_path)
     if is_dpp_successful:
