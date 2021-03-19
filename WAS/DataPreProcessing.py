@@ -5,17 +5,14 @@ from tabulate import tabulate
 from WAS.Node import Node
 
 
-def xml_to_tree(dir_path):
-    nodes_trees = []
-    for filename in os.listdir(dir_path):
-        if filename.endswith('.xml') and ("processed" not in filename):
-            fullname = os.path.join(dir_path, filename)
-            processed_name = os.path.join(dir_path, "processed_{}".format(filename))
-            xtree = ET.parse(fullname)
-            # add prefix so that file is not processed again!
-            # os.rename(fullname, processed_name)
-            nodes_trees.append(xtree)
-    return nodes_trees
+def xml_to_tree(filename):
+    if filename.endswith('.xml'):
+        try:
+            xtree = ET.parse(filename)
+            return xtree
+        except ET.ParseError:
+            return False
+    return False
 
 
 def parse_workflow_nodes(root):
@@ -55,23 +52,20 @@ def parse_workflow_nodes(root):
     return nodes_dict
 
 
-def main():
-    dir_path = "xml_files/random_tree"
-    trees = xml_to_tree(dir_path)
+def main(xml_path, csv_path):
+    workflow = xml_to_tree(xml_path)
     nodes = []
-    for tree in trees:
-        workflow_nodes = parse_workflow_nodes(tree.getroot())
+    if workflow:
+        workflow_nodes = parse_workflow_nodes(workflow.getroot())
         for id, node in workflow_nodes.items():
             node.infer_predecessor(workflow_nodes)
             nodes.append(node)
+    else:
+        print("The workflow summary provided was not in XML format or was corrupted. "
+              "Make sure the path is correct and provide a valid file.")
+        return False
 
     data_frame = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes]).fillna(0)
     print(tabulate(data_frame, headers='keys', tablefmt='psql', showindex='false'))
-    # if os.path.isfile('csvs/summary.csv'):
-    #     data_frame.to_csv('csvs/summary.csv', mode='a', index=False, header=False)
-    # else:
-    data_frame.to_csv('csvs/summary.csv', index=False)
-
-
-if __name__ == "__main__":
-    main()
+    data_frame.to_csv(csv_path, index=False)
+    return True
