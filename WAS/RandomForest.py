@@ -1,11 +1,9 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from skmultiflow.meta import AdaptiveRandomForestRegressor
 import matplotlib.pyplot as plt
 import pickle
-import os
 
 
 def save_adaptive_classifier(filename, arfc_instance):
@@ -40,7 +38,7 @@ def show_graph(importance, feature_headers):
 
 
 def random_forest(train_features, test_features, train_labels, test_labels):
-    rf = RandomForestRegressor(n_estimators=1000, random_state=42)
+    rf = RandomForestClassifier(n_estimators=1000, random_state=42)
     feature_headers = list(test_features.columns)
     # Train the model on training data
     try:
@@ -57,8 +55,9 @@ def random_forest(train_features, test_features, train_labels, test_labels):
         print(predictions)
         show_graph(importance_list, feature_headers)
     except ValueError as e:
-        print("No historical data available. Exiting...")
+        print("Error encountered:")
         print(e)
+        print("Exiting...")
 
 
 def get_adaptive_instance(filename):
@@ -70,19 +69,13 @@ def get_adaptive_instance(filename):
     return arf
 
 
-def add_latest_exec_to_historical_data(historical_data_path, latest_execution):
-    if os.path.isfile(historical_data_path):
-        latest_execution.to_csv(historical_data_path, mode='a', index=False, header=False)
-    else:
-        latest_execution.to_csv(historical_data_path, mode='a', index=False, header=True)
-
-
 def main(historical_data_path, latest_execution_path):
     arf_filename = 'adaptive_classifier.txt'
+    latest_execution = pd.get_dummies(pd.read_csv(latest_execution_path),
+                                      columns=["parent_workflow", "class_name"])
+    historical_data = False
     try:
         historical_data = pd.read_csv(historical_data_path)
-        latest_execution = pd.get_dummies(pd.read_csv(latest_execution_path),
-                                          columns=["parent_workflow", "class_name"])
         test_labels = np.array(latest_execution['is_executed'])
         test_features = latest_execution.drop('is_executed', axis=1)
         train_labels = np.array(historical_data['is_executed'])
@@ -91,11 +84,7 @@ def main(historical_data_path, latest_execution_path):
         random_forest(train_features, test_features, train_labels, test_labels)
         # adaptive_random_forest(features, labels, feature_headers, arf_filename)
     except (pd.errors.EmptyDataError, FileNotFoundError):
+        is_first_workflow = True
         print("No historical data available. Exiting...")
-        latest_execution = pd.get_dummies(pd.read_csv('csvs/latest_execution.csv'),
-                                          columns=["parent_workflow", "class_name"])
-    add_latest_exec_to_historical_data(historical_data_path, latest_execution)
 
-
-if __name__ == "__main__":
-    main()
+    return historical_data, latest_execution

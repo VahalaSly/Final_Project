@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from WAS import DataPreProcessing
 from WAS import RandomForest
+import pandas as pd
 
 
 def get_arguments():
@@ -11,13 +12,24 @@ def get_arguments():
     return parser.parse_args()
 
 
+def add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution):
+    if historical_data is not False:
+        # pd.concat creates a union of the two dataframes, adding any new column
+        latest_execution = pd.concat([historical_data, latest_execution], ignore_index=True, sort=False)
+        # make sure to fill any NAN cell with 0
+        latest_execution.fillna(0, inplace=True)
+    latest_execution.to_csv(historical_data_path, index=False)
+
+
 def main():
     xml_file_path = get_arguments().filepath
     csv_data_path = 'csvs/latest_execution.csv'
     historical_data_path = 'csvs/historical_data.csv'
-    is_pp_successful = DataPreProcessing.main(xml_file_path, csv_data_path)
-    if is_pp_successful:
-        RandomForest.main(historical_data_path, csv_data_path)
+    is_dpp_successful = DataPreProcessing.main(xml_file_path, csv_data_path)
+    if is_dpp_successful:
+        historical_data, latest_execution = \
+            RandomForest.main(historical_data_path, csv_data_path)
+        add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution)
 
 
 if __name__ == "__main__":
