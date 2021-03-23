@@ -75,6 +75,7 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
                 new_node.parent_workflow = workflow_tag_name
                 nodes.append(new_node)
                 workflow.total_duration += int(new_node.execution_duration)
+                workflow.number_of_tasks += 1
                 if new_node.has_failed():
                     workflow.has_failed = True
         workflows_list.append(workflow)
