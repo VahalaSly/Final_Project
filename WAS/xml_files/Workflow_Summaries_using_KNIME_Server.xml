@@ -693,7 +693,6 @@ C:\Program Files\KNIME\\plugins/org.knime.binary.jre.win32.x86_64_1.8.0.252-b09/
 			<eclipse.launcher>C:\Program Files\KNIME\knime.exe</eclipse.launcher>
 			<osgi.frameworkClassPath>., file:c:/Program Files/KNIME/plugins/org.eclipse.osgi.compatibility.state_1.1.700.v20200207-2156.jar, file:c:/Program Files/KNIME/plugins/javax.transaction_1.1.1.v201105210645.jar</osgi.frameworkClassPath>
 			<eclipse.startTime>1614768751532</eclipse.startTime>
-			<eclipse.startTime>1614768751532</eclipse.startTime>
 			<org.osgi.framework.os.version>10.0.0</org.osgi.framework.os.version>
 			<java.vm.info>mixed mode</java.vm.info>
 			<java.vm.version>25.252-b09</java.vm.version>

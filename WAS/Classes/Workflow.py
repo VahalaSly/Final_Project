@@ -1,12 +1,12 @@
 class Workflow:
     """ Class workflow represents an instance of a workflow or sub-workflow """
 
-    def __init__(self, workflow_name=None, is_failed=False, user="UnKnown",
+    def __init__(self, workflow_name=None, has_failed=False, user="UnKnown",
                  total_duration=0, children=None):
         if children is None:
             children = []
         self.name = workflow_name
-        self.is_failed = is_failed
+        self.is_failed = int(has_failed)
         self.user = user
         self.total_duration = total_duration
         self.children = children
@@ -18,10 +18,8 @@ class Workflow:
 
     def to_ml_ready_dict(self):
         ml_ready_dict = {
-            # 'parent_workflow': self.parent_workflow,
-            # 'node_id': self.id,
             'workflow_name': self.name,
-            'is_failed': self.is_failed,
+            'has_failed': self.is_failed,
             'user': self.user,
             'total_duration': self.get_total_duration()
         }

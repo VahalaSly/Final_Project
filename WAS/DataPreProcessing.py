@@ -75,12 +75,12 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
                 new_node.parent_workflow = workflow_tag_name
                 nodes.append(new_node)
                 workflow.total_duration += int(new_node.execution_duration)
-                if new_node.is_failed():
-                    workflow.is_failed = True
+                if new_node.has_failed():
+                    workflow.has_failed = True
         workflows_list.append(workflow)
 
 
-def main(xml_path, csv_path):
+def main(xml_path, tasks_csv_path, workflows_csv_path):
     workflow = xml_to_tree(xml_path)
     nodes = []
     workflows = []
@@ -95,8 +95,8 @@ def main(xml_path, csv_path):
               "Make sure the path is correct and provide a valid file.")
         return False
 
-    data_frame = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes]).fillna(0)
+    tasks_df = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes]).fillna(0)
     workflow_df = pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows]).fillna(0)
-    print(tabulate(workflow_df, headers='keys', tablefmt='psql', showindex='false'))
-    data_frame.to_csv(csv_path, index=False)
+    tasks_df.to_csv(tasks_csv_path, index=False)
+    workflow_df.to_csv(workflows_csv_path, index=False)
     return True

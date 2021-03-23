@@ -35,7 +35,7 @@ class Node:
                 print("Could not convert lastExecutionStartTime string to datetime format. Invalid datetime.")
         return None
 
-    def is_failed(self):
+    def has_failed(self):
         # to have
         is_failed = not self.state == "EXECUTED" and bool(self.errors)
         return int(is_failed)
@@ -46,7 +46,7 @@ class Node:
             # 'parent_workflow': self.parent_workflow,
             # 'node_id': self.id,
             'node_name': self.name,
-            'is_failed': self.is_failed(),
+            'has_failed': self.has_failed(),
             'execution_duration': self.execution_duration,
             'warnings': int(self.warnings),
             'execution_day': day,

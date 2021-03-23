@@ -62,7 +62,7 @@ def main(historical_data_path, latest_execution_path):
 
         new_columns = list(current_workflow.columns.difference(historical_data.columns))
         missing_historical_columns = list(historical_data.columns.difference(current_workflow.columns))
-        label_columns = ['is_failed', 'execution_duration']
+        label_columns = ['has_failed', 'execution_duration']
 
         # the columns added to the current_workflow are given value 0
         # since the new columns are always nodes
@@ -71,8 +71,8 @@ def main(historical_data_path, latest_execution_path):
 
         train_features = historical_data.drop(missing_historical_columns + label_columns, axis=1)
         test_features = current_workflow.drop(new_columns + label_columns, axis=1)
-        test_labels = np.array(current_workflow['is_failed'])
-        train_labels = np.array(historical_data['is_failed'])
+        test_labels = np.array(current_workflow['has_failed'])
+        train_labels = np.array(historical_data['has_failed'])
 
         random_forest(train_features, test_features, train_labels, test_labels)
         # adaptive_random_forest(features, labels, feature_headers, arf_filename)
