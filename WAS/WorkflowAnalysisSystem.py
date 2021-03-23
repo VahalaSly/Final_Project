@@ -27,9 +27,14 @@ def main():
     historical_data_path = 'csvs/historical_data.csv'
     is_dpp_successful = DataPreProcessing.main(xml_file_path, csv_data_path)
     if is_dpp_successful:
-        historical_data, latest_execution = \
-            RandomForest.main(historical_data_path, csv_data_path)
-        add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution)
+        try:
+            historical_data, latest_execution = \
+                RandomForest.main(historical_data_path, csv_data_path)
+            add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution)
+        except ValueError as e:
+            print("Error encountered:")
+            print(e)
+            print("Exiting...")
 
 
 if __name__ == "__main__":
