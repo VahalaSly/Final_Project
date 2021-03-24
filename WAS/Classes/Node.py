@@ -23,6 +23,10 @@ class Node:
         self.errors = errors
         self.predecessors = predecessors
 
+    @property
+    def has_failed(self):
+        return not self.state == "EXECUTED" and bool(self.errors)
+
     def execution_datetime_to_date_format(self):
         if self.execution_datetime is not None:
             try:
@@ -35,18 +39,13 @@ class Node:
                 print("Could not convert lastExecutionStartTime string to datetime format. Invalid datetime.")
         return None
 
-    def has_failed(self):
-        # to have
-        is_failed = not self.state == "EXECUTED" and bool(self.errors)
-        return int(is_failed)
-
     def to_ml_ready_dict(self):
         day, month, year, weekday, time = self.execution_datetime_to_date_format()
         ml_ready_dict = {
             # 'parent_workflow': self.parent_workflow,
             # 'node_id': self.id,
             'node_name': self.name,
-            'has_failed': self.has_failed(),
+            'has_failed': int(self.has_failed),
             'execution_duration': self.execution_duration,
             'warnings': int(self.warnings),
             'execution_day': day,
