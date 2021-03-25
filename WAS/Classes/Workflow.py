@@ -37,12 +37,17 @@ class Workflow:
             total_duration += child.total_duration
         return total_duration
 
+    @property
+    def makespan(self):
+            return self.total_duration / self.number_of_nodes
+
     def to_ml_ready_dict(self):
         ml_ready_dict = {
-            'workflow_name': self.name,
+            'name': self.name,
             'has_failed': int(self.has_failed),
             'user': self.user,
             'number_of_nodes': self.number_of_nodes,
-            'total_duration': self.total_duration
+            'total_duration': self.total_duration,
+            'makespan': self.makespan
         }
         return ml_ready_dict

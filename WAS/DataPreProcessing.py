@@ -67,23 +67,27 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
         all_nodes = workflow_tag.find('nodes').findall('node')
         # go through each node in the workflow
         for node_tag in all_nodes:
-            # a component is another workflow
-            # recursively call parse_workflow on the node with current workflow as parent workflow
+            # a component is a sub-workflow
             if 'component' in node_tag.attrib:
                 parse_workflow(node_tag, nodes, workflows_list, user, workflow)
+            # parse the node
             new_node = parse_node(node_tag)
-            # the new_node will return node if it wasn't executed
             if new_node is not None:
-                for node in nodes:
-                    if new_node.id in node.successors:
-                        new_node.predecessors.append(node)
                 new_node.parent_workflow = workflow_tag_name
                 nodes.append(new_node)
                 workflow.nodes.append(new_node)
-        workflows_list.append(workflow)
+        if workflow.number_of_nodes > 0:
+            workflows_list.append(workflow)
 
 
-def main(xml_path, tasks_csv_path, workflows_csv_path):
+def set_predecessors(nodes):
+    for node1 in nodes:
+        for node2 in nodes:
+            if node1.id in node2.successors:
+                node1.predecessors.append(node2)
+
+
+def main(xml_path):
     workflow = xml_to_tree(xml_path)
     nodes_lst = []
     workflows_lst = []
@@ -93,6 +97,7 @@ def main(xml_path, tasks_csv_path, workflows_csv_path):
         for userName in root.iter('user.name'):
             user = userName.text
         parse_workflow(root, nodes_lst, workflows_lst, user, None)
+        set_predecessors(nodes_lst)
     else:
         print("The workflow summary provided was not in XML format or was corrupted. "
               "Make sure the path is correct and provide a valid file.")
@@ -100,11 +105,6 @@ def main(xml_path, tasks_csv_path, workflows_csv_path):
 
     tasks_df = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes_lst]).fillna(0)
     workflow_df = pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows_lst]).fillna(0)
-    tasks_df.to_csv(tasks_csv_path, index=False)
-    workflow_df.to_csv(workflows_csv_path, index=False)
-    for workflow in workflows_lst:
-        if workflow.name == "Collect Information":
-            for node in workflow.nodes:
-                print(node.name)
-                print(node.has_failed)
-    return True
+    # tasks_df.to_csv(tasks_csv_path, index=False)
+    # workflow_df.to_csv(workflows_csv_path, index=False)
+    return {'task': tasks_df, 'workflow': workflow_df}

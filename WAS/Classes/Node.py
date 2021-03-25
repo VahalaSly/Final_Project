@@ -44,7 +44,7 @@ class Node:
         ml_ready_dict = {
             # 'parent_workflow': self.parent_workflow,
             # 'node_id': self.id,
-            'node_name': self.name,
+            'name': self.name,
             'has_failed': int(self.has_failed),
             'execution_duration': self.execution_duration,
             'warnings': int(self.warnings),
