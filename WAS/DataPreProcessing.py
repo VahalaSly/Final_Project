@@ -61,9 +61,6 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
         workflow.name = workflow_tag_name
         workflow.user = user
         # if the workflow has a parent (a sub-workflow would)...
-        if parent_workflow is not None:
-            # add the current workflow as a child to the parent workflow
-            parent_workflow.children_workflows.append(workflow)
         all_nodes = workflow_tag.find('nodes').findall('node')
         # go through each node in the workflow
         for node_tag in all_nodes:
@@ -78,6 +75,9 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
                 workflow.nodes.append(new_node)
         if workflow.number_of_nodes > 0:
             workflows_list.append(workflow)
+            if parent_workflow is not None:
+                # add the current workflow as a child to the parent workflow
+                parent_workflow.children_workflows.append(workflow)
 
 
 def set_predecessors(nodes):
@@ -101,10 +101,8 @@ def main(xml_path):
     else:
         print("The workflow summary provided was not in XML format or was corrupted. "
               "Make sure the path is correct and provide a valid file.")
-        return False
+        return False, False
 
-    tasks_df = pd.DataFrame.from_records([node.to_ml_ready_dict() for node in nodes_lst]).fillna(0)
-    workflow_df = pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows_lst]).fillna(0)
     # tasks_df.to_csv(tasks_csv_path, index=False)
     # workflow_df.to_csv(workflows_csv_path, index=False)
-    return {'task': tasks_df, 'workflow': workflow_df}
+    return nodes_lst, workflows_lst

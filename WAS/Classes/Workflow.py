@@ -44,10 +44,21 @@ class Workflow:
     def to_ml_ready_dict(self):
         ml_ready_dict = {
             'name': self.name,
-            'has_failed': int(self.has_failed),
             'user': self.user,
-            'number_of_nodes': self.number_of_nodes,
-            'total_duration': self.total_duration,
+            # 'number of nodes': self.number_of_nodes,
+            # 'total duration': self.total_duration,
+            'failure': int(self.has_failed),
             'makespan': self.makespan
         }
         return ml_ready_dict
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'user': self.user,
+            'number of nodes': self.number_of_nodes,
+            'total duration': self.total_duration,
+            'children workflows': [child.name for child in self.children_workflows],
+            'failure': int(self.has_failed),
+            'makespan': self.makespan
+        }
