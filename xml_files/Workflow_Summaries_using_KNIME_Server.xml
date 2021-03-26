@@ -9397,6 +9397,6 @@ The example uses the Analyze Workflow Summary component.
 
 URL: Analyze Workflow Summary component https://kni.me/c/uUPKxtYTuD6ez0xO
 TAGS: workflow abstraction,flow variable,REST,KNIMEServer</description>
-						</metadata>
-					</workflow>
-				</WorkflowSummary>
+		</metadata>
+		</workflow>
+</WorkflowSummary>

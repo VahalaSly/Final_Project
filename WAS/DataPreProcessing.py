@@ -18,7 +18,10 @@ def xml_to_tree(filename):
 def parse_node(node):
     successors = []
     state = node.attrib['state']
-    graph_depth = node.attrib['graphDepth']
+    try:
+        graph_depth = node.attrib['graphDepth']
+    except KeyError:
+        graph_depth = 0
     node_name = node.attrib['name']
     node_id = node.attrib['id']
     warning = False
@@ -47,7 +50,7 @@ def parse_node(node):
                     execution_datetime=execution_datetime)
 
 
-def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
+def parse_workflow(root, nodes, workflows_list, user, os, java, parent_workflow):
     workflow_tag = None
     workflow = Workflow()
     # check if workflow or sub-workflow, and find name in corresponding tag
@@ -60,13 +63,15 @@ def parse_workflow(root, nodes, workflows_list, user, parent_workflow):
         workflow_tag_name = workflow_tag.attrib['name']
         workflow.name = workflow_tag_name
         workflow.user = user
+        workflow.os = os
+        workflow.java = java
         # if the workflow has a parent (a sub-workflow would)...
         all_nodes = workflow_tag.find('nodes').findall('node')
         # go through each node in the workflow
         for node_tag in all_nodes:
             # a component is a sub-workflow
             if 'component' in node_tag.attrib:
-                parse_workflow(node_tag, nodes, workflows_list, user, workflow)
+                parse_workflow(node_tag, nodes, workflows_list, user, os, java, workflow)
             # parse the node
             new_node = parse_node(node_tag)
             if new_node is not None:
@@ -94,9 +99,15 @@ def main(xml_path):
     if workflow:
         root = workflow.getroot()
         user = 'UnKnown'
+        os = 'UnKnown'
+        java = 'UnKnown'
         for userName in root.iter('user.name'):
             user = userName.text
-        parse_workflow(root, nodes_lst, workflows_lst, user, None)
+        for osName in root.iter('os.name'):
+            os = osName.text
+        for javaVersion in root.iter('java.version'):
+            java = javaVersion.text
+        parse_workflow(root, nodes_lst, workflows_lst, user, os, java, None)
         set_predecessors(nodes_lst)
     else:
         print("The workflow summary provided was not in XML format or was corrupted. "

@@ -24,12 +24,18 @@
 <h1>Workflow Analysis System Report</h1>
 <h3> Date and Time: {{timestamp}} </h3>
 
+<h3> Pie-Charts Legend: </h3>
+<p> name_ -> value of name column </p>
+<p> pred_ -> value of predecessors column </p>
+<p> user_ -> value of user column </p>
+<p> os_ -> value of OS column </p>
+
 <h4> Workflow Analysis </h4>
 {{wk_dataframe}}
 
 <h5> Features: </h5>
 {% for image in wk_images %}
-<img src="../WAS/{{image}}" width="600">
+<img src="../WAS/{{image}}" height="550">
 {% endfor %}
 
 <h4> Task Analysis </h4>
@@ -37,7 +43,7 @@
 
 <h5> Features: </h5>
 {% for image in tk_images %}
-<img src="../WAS/{{image}}" width="600">
+<img src="../WAS/{{image}}" height="550">
 {% endfor %}
 
 

@@ -29,17 +29,19 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
 
 
 def prepare_features(results, instances, labels):
-    dataframe = pd.DataFrame.from_records([instance.to_dict() for instance in instances])
+    dataframe = pd.DataFrame.from_records([instance.to_dict() for instance in instances], index=None)
     label_features = {}
     for rf_type, label in labels.items():
+        label_values = dataframe[label].to_list()
+        mean_label_value = sum(abs(number) for number in label_values)/len(label_values)
         features = []
         label_result = results[rf_type]
-        error = label_result['error']
-        if not (rf_type == 'classifier' and error > 0.2):
+        if (rf_type == 'classifier' and label_result['error'] < 0.2) or (
+                rf_type == 'regressor' and label_result['error'] < mean_label_value * 0.2):
             for feature, importance in label_result['features_importance']:
-                if importance > 0.02:
+                if importance > 0.1:
                     features.append((feature, importance))
-            label_features[label] = features
+        label_features[label] = features
         dataframe["{} prediction".format(label)] = label_result['predictions']
     return dataframe, label_features
 
@@ -48,10 +50,10 @@ def main():
     report_path = '{}/../reports'.format(absolute_path)
     # tasks variables
     task_historical_data_path = 'csvs/tasks_historical_data.csv'
-    task_labels = {'classifier': 'failure', 'regressor': 'execution duration'}
+    task_labels = {'classifier': 'failure', 'regressor': 'execution duration (ms)'}
     # workflows variables
     workflow_historical_data_path = 'csvs/workflows_historical_data.csv'
-    workflow_labels = {'classifier': 'failure', 'regressor': 'makespan'}
+    workflow_labels = {'classifier': 'failure', 'regressor': 'tasks per second'}
 
     tasks_historical_data = None
     workflow_historical_data = None
@@ -66,17 +68,21 @@ def main():
             tasks_historical_data = pd.read_csv(task_historical_data_path)
             workflow_historical_data = pd.read_csv(workflow_historical_data_path)
             # execute Random Forest
-            tasks_results = RandomForest.predict(tasks_historical_data, hotenc_task_data, task_labels)
-            workflows_results = RandomForest.predict(workflow_historical_data, hotenc_workflow_data, workflow_labels)
-            # analyse RF results
-            new_task_dataframe, task_features = prepare_features(tasks_results,
-                                                                 tasks, task_labels)
-            new_workflow_dataframe, workflow_features = prepare_features(workflows_results,
-                                                                         workflows, workflow_labels)
-            report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
-                                                  new_workflow_dataframe, report_path)
-            print("Workflow Analysis Finished!")
-            print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
+            try:
+                tasks_results = RandomForest.predict(tasks_historical_data, hotenc_task_data, task_labels)
+                workflows_results = RandomForest.predict(workflow_historical_data, hotenc_workflow_data, workflow_labels)
+                # analyse RF results
+                new_task_dataframe, task_features = prepare_features(tasks_results,
+                                                                     tasks, task_labels)
+                new_workflow_dataframe, workflow_features = prepare_features(workflows_results,
+                                                                             workflows, workflow_labels)
+                report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
+                                                      new_workflow_dataframe, report_path)
+                print("Workflow Analysis Finished!")
+                print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
+            except KeyError:
+                print("Could not train algorithm, some training labels were missing from historical data.")
+                print("Exiting...")
 
         except (pd.errors.EmptyDataError, FileNotFoundError):
             print("No historical data available. Exiting...")

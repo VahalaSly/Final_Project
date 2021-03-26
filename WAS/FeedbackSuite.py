@@ -38,7 +38,7 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
 
 def make_graph(label, data_pairs, figure_name):
     # make a square figure and axes
-    plt.figure(1, figsize=(10, 6))
+    plt.figure(1, figsize=(12, 6))
     ax = plt.axes([0.1, 0.1, 0.8, 0.8])
 
     # The slices will be ordered and plotted counter-clockwise.
@@ -51,7 +51,7 @@ def make_graph(label, data_pairs, figure_name):
         fracs.append(percentage)
         other_percentage -= percentage
     if other_percentage > 0:
-        labels.append("Other")
+        labels.append("Unknown")
         fracs.append(other_percentage)
 
     plt.pie(fracs, labels=labels,

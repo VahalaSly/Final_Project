@@ -40,7 +40,7 @@ def random_forest(data_sets, rf_instance):
     importance_list, features_importance = get_numerical_feature_importance(rf_instance, feature_headers)
 
     return {'predictions': predictions, 'error': mean_error,
-            'features_importance': features_importance, 'importance_list': importance_list}
+            'features_importance': features_importance}
 
 
 def get_t_sets(rf_type, labels, historical_data, new_data):
@@ -53,24 +53,31 @@ def get_t_sets(rf_type, labels, historical_data, new_data):
     for label_type, label in labels.items():
         all_labels.append(label)
 
-    train_features = historical_data.drop(missing_historical_columns + all_labels, axis=1)
-    test_features = new_data.drop(new_columns + all_labels, axis=1)
-    train_labels = np.array(historical_data[labels[rf_type]])
-    test_labels = np.array(new_data[labels[rf_type]])
+    try:
+        train_features = historical_data.drop(missing_historical_columns + all_labels, axis=1)
+        test_features = new_data.drop(new_columns + all_labels, axis=1)
+        train_labels = np.array(historical_data[labels[rf_type]])
+        test_labels = np.array(new_data[labels[rf_type]])
 
-    return {'train_features': train_features, 'test_features': test_features,
-            'test_labels': test_labels, 'train_labels': train_labels}
+        return {'train_features': train_features, 'test_features': test_features,
+                'test_labels': test_labels, 'train_labels': train_labels}
+    except KeyError as e:
+        print(e)
+        return KeyError
 
 
 def predict(historical_data, new_data, labels):
     results_dict = {}
     for key in labels.keys():
-        sets = get_t_sets(key, labels, historical_data, new_data)
-        rf_type = None
-        if key == "classifier":
-            rf_type = RandomForestClassifier(n_estimators=128)
-        if key == "regressor":
-            rf_type = RandomForestRegressor(n_estimators=128)
-        results = random_forest(sets, rf_type)
-        results_dict[key] = results
+        try:
+            sets = get_t_sets(key, labels, historical_data, new_data)
+            rf_type = None
+            if key == "classifier":
+                rf_type = RandomForestClassifier(n_estimators=128)
+            if key == "regressor":
+                rf_type = RandomForestRegressor(n_estimators=128)
+            results = random_forest(sets, rf_type)
+            results_dict[key] = results
+        except KeyError:
+            return KeyError
     return results_dict

@@ -42,11 +42,9 @@ class Node:
     def to_ml_ready_dict(self):
         day, month, year, weekday, time = self.execution_datetime_to_date_format()
         ml_ready_dict = {
-            # 'parent_workflow': self.parent_workflow,
-            # 'node_id': self.id,
             'name': self.name,
             'failure': int(self.has_failed),
-            'execution duration': self.execution_duration,
+            'execution duration (ms)': self.execution_duration,
             'warnings': int(self.warnings),
             'execution day': day,
             'execution month': month,
@@ -69,5 +67,5 @@ class Node:
             'datetime': self.execution_datetime,
             'predecessors': [predecessor.id for predecessor in self.predecessors],
             'failure': int(self.has_failed),
-            'execution duration': self.execution_duration,
+            'execution duration (ms)': self.execution_duration,
         }

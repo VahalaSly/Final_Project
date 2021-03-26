@@ -1,13 +1,16 @@
 class Workflow:
     """ Class workflow represents an instance of a workflow or sub-workflow """
 
-    def __init__(self, workflow_name=None, user="UnKnown", children_workflows=None, nodes=None):
+    def __init__(self, workflow_name=None, user="UnKnown", os="UnKnown", java="UnKnown", children_workflows=None,
+                 nodes=None):
         if nodes is None:
             nodes = []
         if children_workflows is None:
             children_workflows = []
         self.name = workflow_name
         self.user = user
+        self.os = os
+        self.java = java
         self.children_workflows = children_workflows
         self.nodes = nodes
 
@@ -38,17 +41,19 @@ class Workflow:
         return total_duration
 
     @property
-    def makespan(self):
-            return self.total_duration / self.number_of_nodes
+    def tasks_sec(self):
+        return self.number_of_nodes / round(self.total_duration / 1000, 2)
 
     def to_ml_ready_dict(self):
         ml_ready_dict = {
             'name': self.name,
             'user': self.user,
+            'OS': self.os,
+            'Java': self.java,
             # 'number of nodes': self.number_of_nodes,
             # 'total duration': self.total_duration,
             'failure': int(self.has_failed),
-            'makespan': self.makespan
+            'tasks per second': self.tasks_sec
         }
         return ml_ready_dict
 
@@ -56,9 +61,11 @@ class Workflow:
         return {
             'name': self.name,
             'user': self.user,
+            'OS': self.os,
+            'Java version': self.java,
             'number of nodes': self.number_of_nodes,
-            'total duration': self.total_duration,
+            'total duration (ms)': self.total_duration,
             'children workflows': [child.name for child in self.children_workflows],
             'failure': int(self.has_failed),
-            'makespan': self.makespan
+            'tasks per second': self.tasks_sec
         }
