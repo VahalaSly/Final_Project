@@ -112,8 +112,10 @@ def main(xml_path):
     else:
         print("The workflow summary provided was not in XML format or was corrupted. "
               "Make sure the path is correct and provide a valid file.")
-        return False, False
+        return None, None
 
-    # tasks_df.to_csv(tasks_csv_path, index=False)
-    # workflow_df.to_csv(workflows_csv_path, index=False)
-    return nodes_lst, workflows_lst
+    hotenc_task_data = pd.get_dummies(
+        pd.DataFrame.from_records([task.to_ml_ready_dict() for task in nodes_lst]).fillna(0))
+    hotenc_workflow_data = pd.get_dummies(
+        pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows_lst]).fillna(0))
+    return hotenc_task_data, hotenc_workflow_data

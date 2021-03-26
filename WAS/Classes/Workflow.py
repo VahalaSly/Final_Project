@@ -56,16 +56,3 @@ class Workflow:
             'tasks per second': self.tasks_sec
         }
         return ml_ready_dict
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'user': self.user,
-            'OS': self.os,
-            'Java version': self.java,
-            'number of nodes': self.number_of_nodes,
-            'total duration (ms)': self.total_duration,
-            'children workflows': [child.name for child in self.children_workflows],
-            'failure': int(self.has_failed),
-            'tasks per second': self.tasks_sec
-        }

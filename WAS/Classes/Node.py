@@ -54,18 +54,6 @@ class Node:
         }
         # create a custom column for each predecessor
         for predecessor in self.predecessors:
-            key = "pred_{}".format(predecessor.name)
+            key = "predecessor_{}".format(predecessor.name)
             ml_ready_dict[key] = 1
         return ml_ready_dict
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'parent_workflow': self.parent_workflow,
-            'warnings': int(self.warnings),
-            'datetime': self.execution_datetime,
-            'predecessors': [predecessor.id for predecessor in self.predecessors],
-            'failure': int(self.has_failed),
-            'execution duration (ms)': self.execution_duration,
-        }
