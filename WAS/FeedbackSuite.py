@@ -46,7 +46,8 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
 
     task_dataset = task_dataset.style.apply(colourise_cells, cell_index_column=tasks_problematic_cells,
                                             subset=None, axis=None)
-    workflow_dataset = workflow_dataset.style.apply(colourise_cells, cell_index_column=workflows_problematic_cells,
+    workflow_dataset = workflow_dataset.style.apply(colourise_cells,
+                                                    cell_index_column=workflows_problematic_cells,
                                                     subset=None, axis=None)
 
     return create_html(task_figures, workflow_figures, task_dataset, workflow_dataset,

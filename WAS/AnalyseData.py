@@ -17,32 +17,32 @@ def analyse(labels_results, data, labels):
         low_error = is_error_under_threshold(rf_type, label_rows, rf_result)
         # if error is too high, the features are not returned
         features = get_correct_prediction_features(low_error, rf_result)
-        problematic_cells += get_problematic_cells(data, features, label, rf_type)
+        problematic_cells += get_problematic_cells(data, features, label)
         label_features[label] = features
     return data, label_features, problematic_cells
 
     # print(tabulate(data, headers='keys', tablefmt='psql'))
 
 
-def get_problematic_cells(dataframe, features, label, rf_type):
+def get_problematic_cells(dataframe, features, label):
     cells = []
     for index in dataframe.index:
         prediction_column = dataframe.iloc[index]["{} prediction".format(label)]
-        classifier_issue = dataframe.iloc[index][label] == 1
-        regressor_issue = dataframe.iloc[index][label] > (prediction_column * 1.5)
-        if rf_type == 'classifier' and classifier_issue\
-                or rf_type == 'regressor' and regressor_issue:
+        failure_issue = prediction_column == 1
+        exec_dur_issue = dataframe.iloc[index][label] > (prediction_column * 1.5)
+        tasks_sec_isse = (dataframe.iloc[index][label] * 1.5) < prediction_column
+        if (label == 'failure' and failure_issue)\
+                or (label == 'execution duration (ms)' and exec_dur_issue)\
+                or (label == 'tasks per second' and tasks_sec_isse):
             for feature, importance in features:
-                if importance > 0.1:
-                    if "_" in feature:
-                        split_feat = feature.split("_", 1)
-                        column = split_feat[0]
-                        value = split_feat[1]
-                        if dataframe.iloc[index][column] == value:
-                            cells.append((index, column))
-                    else:
-                        cells.append((index, feature))
-    print(cells)
+                if "_" in feature:
+                    split_feat = feature.split("_", 1)
+                    column = split_feat[0]
+                    value = split_feat[1]
+                    if dataframe.iloc[index][column] == value:
+                        cells.append((index, column))
+                else:
+                    cells.append((index, feature))
     return cells
 
 
