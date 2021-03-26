@@ -52,12 +52,13 @@ def main():
                 workflows_results = RandomForest.predict(workflow_historical_data, workflows,
                                                          workflow_rf_label_map)
                 # analyse RF results
-                new_task_dataframe, task_features = AnalyseData.analyse(tasks_results,
-                                                                        tasks, task_rf_label_map)
-                new_workflow_dataframe, workflow_features = AnalyseData.analyse(workflows_results,
-                                                                                workflows, workflow_rf_label_map)
+                new_task_dataframe, task_features, tasks_problematic_cells = AnalyseData.analyse(
+                    tasks_results, tasks, task_rf_label_map)
+                new_workflow_dataframe, workflow_features, workflows_problematic_cells = AnalyseData.analyse(
+                    workflows_results, workflows, workflow_rf_label_map)
                 report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
-                                                      new_workflow_dataframe, report_path)
+                                                      new_workflow_dataframe, tasks_problematic_cells,
+                                                      workflows_problematic_cells, report_path)
                 print("Workflow Analysis Finished!")
                 print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
             except KeyError:

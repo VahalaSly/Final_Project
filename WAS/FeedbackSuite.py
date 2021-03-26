@@ -1,16 +1,25 @@
 import matplotlib.pyplot as plt
 from datetime import datetime
 import jinja2
+import pandas as pd
 
 
-def create_html(task_figures, workflow_figures, task_dataframe, workflow_dataframe, report_path):
+def colourise_cells(dataframe, cell_index_column):
+    df1 = pd.DataFrame('', index=dataframe.index, columns=dataframe.columns)
+    for index, column in cell_index_column:
+        df1.loc[index, column] = 'background-color: yellow'
+    return df1
+
+
+def create_html(task_figures, workflow_figures, task_dataframe, workflow_dataframe,
+                report_path):
     timestamp = datetime.now()
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=''))
     template = env.get_template('report/report_template.html')
 
-    html = template.render(timestamp=timestamp, wk_dataframe=workflow_dataframe.to_html(),
-                           tk_dataframe=task_dataframe.to_html(), wk_images=workflow_figures, tk_images=task_figures)
+    html = template.render(timestamp=timestamp, wk_dataframe=workflow_dataframe.render(),
+                           tk_dataframe=task_dataframe.render(), wk_images=workflow_figures, tk_images=task_figures)
 
     timestamp = timestamp.strftime("%d%m%y%H%M%S")
     # Write the HTML file
@@ -20,20 +29,28 @@ def create_html(task_figures, workflow_figures, task_dataframe, workflow_datafra
     return html_file
 
 
-def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, report_path):
-    tasks_figures = []
+def produce_report(task_features, workflow_features, task_dataset, workflow_dataset,
+                   tasks_problematic_cells, workflows_problematic_cells, report_path):
+    task_figures = []
     workflow_figures = []
     # task graphs
     for label, features in task_features.items():
         figure_name = "report/figures/task_{}.png".format(label)
         make_graph(label, features, figure_name)
-        tasks_figures.append(figure_name)
+        task_figures.append(figure_name)
     # workflow graphs
     for label, features in workflow_features.items():
         figure_name = "report/figures/workflow_{}.png".format(label)
         make_graph(label, features, figure_name)
         workflow_figures.append(figure_name)
-    return create_html(tasks_figures, workflow_figures, task_dataset, workflow_dataset, report_path)
+
+    task_dataset = task_dataset.style.apply(colourise_cells, cell_index_column=tasks_problematic_cells,
+                                            subset=None, axis=None)
+    workflow_dataset = workflow_dataset.style.apply(colourise_cells, cell_index_column=workflows_problematic_cells,
+                                                    subset=None, axis=None)
+
+    return create_html(task_figures, workflow_figures, task_dataset, workflow_dataset,
+                       report_path)
 
 
 def make_graph(label, data_pairs, figure_name):

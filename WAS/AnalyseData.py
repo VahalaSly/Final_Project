@@ -5,6 +5,7 @@ import pandas as pd
 def analyse(labels_results, data, labels):
     data = undummify(data)
     label_features = {}
+    problematic_cells = []
     for rf_type, rf_result in labels_results.items():
         # get the label corresponding to classifier or regressor
         label = labels[rf_type]
@@ -16,20 +17,33 @@ def analyse(labels_results, data, labels):
         low_error = is_error_under_threshold(rf_type, label_rows, rf_result)
         # if error is too high, the features are not returned
         features = get_correct_prediction_features(low_error, rf_result)
-        get_problematic_cells(data, features, label, rf_type)
+        problematic_cells += get_problematic_cells(data, features, label, rf_type)
         label_features[label] = features
-    return data, label_features
+    return data, label_features, problematic_cells
 
     # print(tabulate(data, headers='keys', tablefmt='psql'))
 
 
 def get_problematic_cells(dataframe, features, label, rf_type):
-    for feature, importance in features:
-        if importance > 0.1:
-            if "_" in feature:
-                pass
-            else:
-                pass
+    cells = []
+    for index in dataframe.index:
+        prediction_column = dataframe.iloc[index]["{} prediction".format(label)]
+        classifier_issue = dataframe.iloc[index][label] == 1
+        regressor_issue = dataframe.iloc[index][label] > (prediction_column * 1.5)
+        if rf_type == 'classifier' and classifier_issue\
+                or rf_type == 'regressor' and regressor_issue:
+            for feature, importance in features:
+                if importance > 0.1:
+                    if "_" in feature:
+                        split_feat = feature.split("_", 1)
+                        column = split_feat[0]
+                        value = split_feat[1]
+                        if dataframe.iloc[index][column] == value:
+                            cells.append((index, column))
+                    else:
+                        cells.append((index, feature))
+    print(cells)
+    return cells
 
 
 def is_error_under_threshold(rf_type, label_rows, rf_result):
