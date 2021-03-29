@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
-from WAS import DataPreProcessing
-from WAS import RandomForest
-from WAS import FeedbackSuite
-from WAS import AnalyseData
+import DataPreProcessing
+import RandomForest
+import FeedbackSuite
+import AnalyseResults
 import pandas as pd
 import pathlib
 
@@ -52,9 +52,9 @@ def main():
                 workflows_results = RandomForest.predict(workflow_historical_data, workflows,
                                                          workflow_rf_label_map)
                 # analyse RF results
-                new_task_dataframe, task_features, tasks_problematic_cells = AnalyseData.analyse(
+                new_task_dataframe, task_features, tasks_problematic_cells = AnalyseResults.analyse(
                     tasks_results, tasks, task_rf_label_map)
-                new_workflow_dataframe, workflow_features, workflows_problematic_cells = AnalyseData.analyse(
+                new_workflow_dataframe, workflow_features, workflows_problematic_cells = AnalyseResults.analyse(
                     workflows_results, workflows, workflow_rf_label_map)
                 report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
                                                       new_workflow_dataframe, tasks_problematic_cells,
@@ -63,22 +63,23 @@ def main():
                 print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
             except KeyError:
                 print("Could not train algorithm, some training labels were missing from historical data.")
-                print("Exiting...")
 
         except (pd.errors.EmptyDataError, FileNotFoundError):
             print("No historical data available. Exiting...")
         except ValueError as e:
             print("Error encountered:")
             print(e)
-            print("Exiting...")
 
+        print("Saving workflow execution data to historical data...")
         add_latest_exec_to_historical_data(task_historical_data_path,
                                            tasks_historical_data, tasks)
         add_latest_exec_to_historical_data(workflow_historical_data_path,
                                            workflow_historical_data, workflows)
+        print("Exiting...")
 
 
 if __name__ == "__main__":
     absolute_path = pathlib.Path(__file__).parent.absolute()
     xml_file_path = get_arguments().filepath
+    print("Initialising Workflow Analysis System...")
     main()

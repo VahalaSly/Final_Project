@@ -1,7 +1,7 @@
 import lxml.etree as ET
 import pandas as pd
-from WAS.Classes.Node import Node
-from WAS.Classes.Workflow import Workflow
+from Classes.Node import Node
+from Classes.Workflow import Workflow
 
 
 def xml_to_tree(filename):

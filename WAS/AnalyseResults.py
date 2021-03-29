@@ -21,8 +21,6 @@ def analyse(labels_results, data, labels):
         label_features[label] = features
     return data, label_features, problematic_cells
 
-    # print(tabulate(data, headers='keys', tablefmt='psql'))
-
 
 def get_problematic_cells(dataframe, features, label):
     cells = []
