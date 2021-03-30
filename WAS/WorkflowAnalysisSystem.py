@@ -58,8 +58,11 @@ def main():
                     workflows_results, workflows, workflow_rf_labels_map)
                 report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
                                                       new_workflow_dataframe, report_path)
-                print("Workflow Analysis Finished!")
-                print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
+                if report is not None:
+                    print("Workflow Analysis Finished!")
+                    print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
+                else:
+                    print("Could not produce report. Check the errors and try again.")
             except KeyError:
                 print("Could not train algorithm, some training labels were missing from historical data.")
 

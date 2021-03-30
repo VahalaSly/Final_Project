@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def analyse(labels_results, input_execution_data, rf_labels):
-    data = input_execution_data
+    data = undummify(input_execution_data)
     label_features = {}
     problematic_cells = []
     for rf_type, rf_result in labels_results.items():
