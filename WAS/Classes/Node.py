@@ -54,6 +54,6 @@ class Node:
         }
         # create a custom column for each predecessor
         for predecessor in self.predecessors:
-            key = "predecessor_{}".format(predecessor.name)
+            key = "predecessor!-->{}".format(predecessor.name)
             ml_ready_dict[key] = 1
         return ml_ready_dict

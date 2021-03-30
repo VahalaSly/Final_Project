@@ -115,7 +115,8 @@ def main(xml_path):
         return None, None
 
     hotenc_task_data = pd.get_dummies(
-        pd.DataFrame.from_records([task.to_ml_ready_dict() for task in nodes_lst]).fillna(0))
+        pd.DataFrame.from_records([task.to_ml_ready_dict() for task in nodes_lst]).fillna(0), prefix_sep='!-->')
     hotenc_workflow_data = pd.get_dummies(
-        pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows_lst]).fillna(0))
+        pd.DataFrame.from_records([workflow.to_ml_ready_dict() for workflow in workflows_lst]).fillna(0),
+        prefix_sep='!-->')
     return hotenc_task_data, hotenc_workflow_data

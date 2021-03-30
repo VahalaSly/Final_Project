@@ -4,10 +4,10 @@ import jinja2
 import pandas as pd
 
 
-def colourise_cells(dataframe, cell_index_column):
+def highlight_columns(dataframe, feature_columns):
     df1 = pd.DataFrame('', index=dataframe.index, columns=dataframe.columns)
-    for index, column in cell_index_column:
-        df1.loc[index, column] = 'background-color: yellow'
+    for column, importance in feature_columns:
+        df1[column] = 'background-color: grey'
     return df1
 
 
@@ -29,8 +29,7 @@ def create_html(task_figures, workflow_figures, task_dataframe, workflow_datafra
     return html_file
 
 
-def produce_report(task_features, workflow_features, task_dataset, workflow_dataset,
-                   tasks_problematic_cells, workflows_problematic_cells, report_path):
+def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, report_path):
     task_figures = []
     workflow_figures = []
     # task graphs
@@ -44,10 +43,13 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
         make_graph(label, features, figure_name)
         workflow_figures.append(figure_name)
 
-    task_dataset = task_dataset.style.apply(colourise_cells, cell_index_column=tasks_problematic_cells,
+    workflow_features_list = list(set().union(*workflow_features.values()))
+    task_features_list = list(set().union(*task_features.values()))
+
+    task_dataset = task_dataset.style.apply(highlight_columns, feature_columns=task_features_list,
                                             subset=None, axis=None)
-    workflow_dataset = workflow_dataset.style.apply(colourise_cells,
-                                                    cell_index_column=workflows_problematic_cells,
+    workflow_dataset = workflow_dataset.style.apply(highlight_columns,
+                                                    feature_columns=workflow_features_list,
                                                     subset=None, axis=None)
 
     return create_html(task_figures, workflow_figures, task_dataset, workflow_dataset,

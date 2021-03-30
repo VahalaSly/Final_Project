@@ -33,10 +33,10 @@ def main():
     report_path = '{}/../reports'.format(absolute_path)
     # tasks variables
     task_historical_data_path = 'csvs/tasks_historical_data.csv'
-    task_rf_label_map = {'classifier': 'failure', 'regressor': 'execution duration (ms)'}
+    task_rf_label_map = {'classifier': ['failure', 'warnings'], 'regressor': ['execution duration (ms)', 'execution weekday']}
     # workflows variables
     workflow_historical_data_path = 'csvs/workflows_historical_data.csv'
-    workflow_rf_label_map = {'classifier': 'failure', 'regressor': 'tasks per second'}
+    workflow_rf_labels_map = {'classifier': ['failure'], 'regressor': ['tasks per second']}
 
     tasks_historical_data = None
     workflow_historical_data = None
@@ -50,22 +50,21 @@ def main():
             try:
                 tasks_results = RandomForest.predict(tasks_historical_data, tasks, task_rf_label_map)
                 workflows_results = RandomForest.predict(workflow_historical_data, workflows,
-                                                         workflow_rf_label_map)
+                                                         workflow_rf_labels_map)
                 # analyse RF results
-                new_task_dataframe, task_features, tasks_problematic_cells = AnalyseResults.analyse(
+                new_task_dataframe, task_features = AnalyseResults.analyse(
                     tasks_results, tasks, task_rf_label_map)
-                new_workflow_dataframe, workflow_features, workflows_problematic_cells = AnalyseResults.analyse(
-                    workflows_results, workflows, workflow_rf_label_map)
+                new_workflow_dataframe, workflow_features = AnalyseResults.analyse(
+                    workflows_results, workflows, workflow_rf_labels_map)
                 report = FeedbackSuite.produce_report(task_features, workflow_features, new_task_dataframe,
-                                                      new_workflow_dataframe, tasks_problematic_cells,
-                                                      workflows_problematic_cells, report_path)
+                                                      new_workflow_dataframe, report_path)
                 print("Workflow Analysis Finished!")
                 print("Report file:///{} has been saved.".format(report.replace('\\', '/')))
             except KeyError:
                 print("Could not train algorithm, some training labels were missing from historical data.")
 
         except (pd.errors.EmptyDataError, FileNotFoundError):
-            print("No historical data available. Exiting...")
+            print("No historical data available.")
         except ValueError as e:
             print("Error encountered:")
             print(e)
