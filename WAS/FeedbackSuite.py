@@ -63,15 +63,19 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
     task_figures = []
     workflow_figures = []
     # task graphs
+    i = 0
     for label, features in task_features.items():
-        figure_name = "report/figures/task_{}.png".format(label)
+        figure_name = "report/figures/task_{}.png".format(i)
         make_graph(label, features, figure_name)
         task_figures.append(figure_name)
+        i += 1
     # workflow graphs
+    i = 0
     for label, features in workflow_features.items():
-        figure_name = "report/figures/workflow_{}.png".format(label)
+        figure_name = "report/figures/workflow_{}.png".format(i)
         make_graph(label, features, figure_name)
         workflow_figures.append(figure_name)
+        i += 1
 
     workflow_features_list = list(set().union(*workflow_features.values()))
     task_features_list = list(set().union(*task_features.values()))
@@ -101,7 +105,7 @@ def make_graph(label, data_pairs, figure_name):
     for pair in data_pairs:
         feature_name = pair[0]
         # cut off names that are too long
-        max_length = 40
+        max_length = 60
         if len(feature_name) > max_length:
             feature_name = feature_name[:max_length] + "[...]"
         labels.append(feature_name)

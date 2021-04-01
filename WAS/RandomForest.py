@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
-import matplotlib.pyplot as plt
 
 
 def get_numerical_feature_importance(rf, feature_columns):
@@ -40,9 +39,8 @@ def get_t_sets(target_label, all_labels, historical_data, new_data):
 
         return {'train_features': train_features, 'test_features': test_features,
                 'test_labels': test_labels, 'train_labels': train_labels}
-    except KeyError as e:
-        print(e)
-        return KeyError
+    except KeyError:
+        raise KeyError
 
 
 def predict(historical_data, new_data, rf_labels):
@@ -61,5 +59,5 @@ def predict(historical_data, new_data, rf_labels):
                 results = random_forest(sets, rf_type)
                 results_dict[rf][target_label] = results
             except KeyError:
-                return KeyError
+                raise KeyError
     return results_dict
