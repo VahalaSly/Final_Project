@@ -20,13 +20,6 @@ def get_arguments():
 def add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution):
     try:
         if historical_data is not None:
-            found_columns = []
-            for column in latest_execution.columns:
-                if column in found_columns:
-                    print(column)
-                else:
-                    found_columns.append(column)
-
             # pd.concat creates a union of the two dataframes, adding any new column
             latest_execution = pd.concat([historical_data, latest_execution], ignore_index=True, sort=False)
             # make sure to fill any NAN cell with 0
@@ -42,7 +35,8 @@ def main():
     report_path = '{}/../reports'.format(absolute_path)
     # tasks variables
     task_historical_data_path = 'csvs/tasks_historical_data.csv'
-    #TODO: Ideally these should be passed as column:value by the user
+
+    # TODO: Ideally these should be passed as column:value by the user
     task_rf_label_map = {'classifier': ['state!-->EXECUTED'],
                          'regressor': ['executionStatistics.executionDurationSinceStart']}
     # workflows variables
@@ -88,8 +82,8 @@ def main():
                                                                                hotenc_task_data,
                                                                                task_rf_label_map)
                     new_workflow_dataframe, workflow_features = AnalyseResults.analyse(workflow_results,
-                                                                                   hotenc_workflow_data,
-                                                                                   workflow_rf_labels_map)
+                                                                                       hotenc_workflow_data,
+                                                                                       workflow_rf_labels_map)
                     print("Results analysis step successful! \n")
                 except KeyError as e:
                     sys.stderr.write("Results analysis step unsuccessful :( \n")
