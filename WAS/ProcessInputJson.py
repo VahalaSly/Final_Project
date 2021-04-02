@@ -1,5 +1,6 @@
 import json
 from pandas import json_normalize
+import sys
 
 
 # taken from https://towardsdatascience.com/flattening-json-objects-in-python-f5343c794b10
@@ -28,8 +29,9 @@ def parse_workflow(environment, workflow, workflows_json, nodes_json):
     nodes_key = 'nodes'
     try:
         nodes = workflow['nodes']
-    except KeyError:
+    except KeyError as e:
         print("Could not find mandatory key {}. Make sure the JSON file is correctly formatted.".format(nodes_key))
+        sys.stderr.write(str(e) + "\n")
         return KeyError
     workflow.pop('nodes')
     flattened_workflow = flatten_json(workflow)
@@ -59,8 +61,9 @@ def main(filepath):
     flatten_json(environment)
     try:
         workflow = execution_summary[workflow_key]
-    except KeyError:
+    except KeyError as e:
         print("Could not find mandatory key {}. Make sure the JSON file is correctly formatted.".format(workflow_key))
+        sys.stderr.write(str(e) + "\n")
         raise KeyError
     parse_workflow(environment, workflow, workflow_json, nodes_json)
     workflows = json_normalize(workflow_json)

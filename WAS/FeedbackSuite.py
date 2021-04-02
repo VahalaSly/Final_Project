@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from datetime import datetime
 import pandas as pd
+import sys
 
 
 def colourise_cells(dataframe, feature_columns):
@@ -89,8 +90,8 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
                     workflow_features_list, task_features_list, xlsx_file)
         return xlsx_file
     except TypeError as e:
-        print(e)
-        return None
+        sys.stderr.write(str(e) + "\n")
+        raise TypeError
 
 
 def make_graph(label, data_pairs, figure_name):

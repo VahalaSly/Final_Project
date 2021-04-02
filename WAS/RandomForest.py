@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 
@@ -39,7 +40,8 @@ def get_t_sets(target_label, all_labels, historical_data, new_data):
 
         return {'train_features': train_features, 'test_features': test_features,
                 'test_labels': test_labels, 'train_labels': train_labels}
-    except KeyError:
+    except KeyError as e:
+        sys.stderr.write(str(e) + "\n")
         raise KeyError
 
 
@@ -58,6 +60,7 @@ def predict(historical_data, new_data, rf_labels):
                     rf_type = RandomForestRegressor(n_estimators=128)
                 results = random_forest(sets, rf_type)
                 results_dict[rf][target_label] = results
-            except KeyError:
+            except KeyError as e:
+                sys.stderr.write(str(e) + "\n")
                 raise KeyError
     return results_dict

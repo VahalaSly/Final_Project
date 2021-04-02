@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 
 
 def is_error_under_threshold(rf_type, label_rows, label_results):
@@ -59,6 +60,7 @@ def analyse(labels_results, input_execution_data, rf_labels, column_value_separa
                 features = get_correct_prediction_features(low_error, label_results)
                 # problematic_cells += get_problematic_cells(data, features, label)
                 label_features[label] = features
-            except KeyError:
+            except KeyError as e:
+                sys.stderr.write(str(e) + "\n")
                 raise KeyError
     return undummify(input_execution_data, column_value_separator), label_features
