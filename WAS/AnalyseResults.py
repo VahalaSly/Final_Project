@@ -18,7 +18,7 @@ def get_correct_prediction_features(low_error, result):
     return features
 
 
-def undummify(df, prefix_sep="!-->"):
+def undummify(df, prefix_sep):
     prefix_columns = {
         item.split(prefix_sep)[0]: (prefix_sep in item) for item in df.columns
     }
@@ -38,7 +38,7 @@ def undummify(df, prefix_sep="!-->"):
     return undummified_df
 
 
-def analyse(labels_results, input_execution_data, rf_labels):
+def analyse(labels_results, input_execution_data, rf_labels, column_value_separator):
     # data = undummify(input_execution_data)
     label_features = {}
     problematic_cells = []
@@ -61,4 +61,4 @@ def analyse(labels_results, input_execution_data, rf_labels):
                 label_features[label] = features
             except KeyError:
                 raise KeyError
-    return undummify(input_execution_data), label_features
+    return undummify(input_execution_data, column_value_separator), label_features
