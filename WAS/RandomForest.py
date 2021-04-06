@@ -1,7 +1,9 @@
-import numpy as np
 import sys
+import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
 
 
 def get_numerical_feature_importance(rf, feature_columns):
@@ -22,24 +24,40 @@ def random_forest(data_sets, rf_instance):
     mean_error = round(np.mean(errors), 2)
     importance_list, features_importance = get_numerical_feature_importance(rf_instance, feature_headers)
 
+    if data_sets['encoder'] is not None:
+        predictions = data_sets['encoder'].inverse_transform(predictions)
+
     return {'predictions': predictions, 'error': mean_error,
             'features_importance': features_importance}
 
 
-def get_t_sets(target_label, all_labels, historical_data, new_data):
-    # get columns present in new data but not in historical data
-    new_columns = list(new_data.columns.difference(historical_data.columns))
-    # get columns present in historical data but not new data
-    missing_historical_columns = list(historical_data.columns.difference(new_data.columns))
+def get_t_sets(rf_type, target_label, historical_data, new_data):
+    train, test = historical_data.align(new_data, join='inner', axis=1)
+
+    le = None
+    if rf_type == 'classifier':
+        le = LabelEncoder()
+        label_values = list(train[target_label]) + list(test[target_label])
+        le.fit(label_values)
+        train[target_label] = le.transform(train[target_label])
+        test[target_label] = le.transform(test[target_label])
+
+    # hot encode the categorical features
+    hotenc_hist_data = pd.get_dummies(pd.DataFrame.from_records(train),
+                                      prefix_sep="!-->").fillna(0)
+    hotenc_new_data = pd.get_dummies(pd.DataFrame.from_records(test),
+                                     prefix_sep="!-->").fillna(0)
+
+    final_train, final_test = hotenc_hist_data.align(hotenc_new_data, join='inner', axis=1)
 
     try:
-        train_features = historical_data.drop(missing_historical_columns + all_labels, axis=1)
-        test_features = new_data.drop(new_columns + all_labels, axis=1)
-        train_labels = np.array(historical_data[target_label])
-        test_labels = np.array(new_data[target_label])
+        train_features = final_train.drop(target_label, axis=1)
+        test_features = final_test.drop(target_label, axis=1)
+        train_labels = np.array(final_train[target_label])
+        test_labels = np.array(final_test[target_label])
 
         return {'train_features': train_features, 'test_features': test_features,
-                'test_labels': test_labels, 'train_labels': train_labels}
+                'test_labels': test_labels, 'train_labels': train_labels, 'encoder': le}
     except KeyError as e:
         sys.stderr.write(str(e) + "\n")
         raise KeyError
@@ -47,12 +65,11 @@ def get_t_sets(target_label, all_labels, historical_data, new_data):
 
 def predict(historical_data, new_data, rf_labels):
     results_dict = {}
-    all_labels = list(set().union(*rf_labels.values()))
     for rf, labels in rf_labels.items():
         results_dict[rf] = {}
         for target_label in labels:
             try:
-                sets = get_t_sets(target_label, all_labels, historical_data, new_data)
+                sets = get_t_sets(rf, target_label, historical_data, new_data)
                 rf_type = None
                 if rf == "classifier":
                     rf_type = RandomForestClassifier(n_estimators=128)

@@ -59,21 +59,16 @@ def analyse(report_path,
             sys.stderr.write(str(e))
             raise KeyError
 
-        # check if the labels provided by the user are valid
-        hotenc_task_data = pd.get_dummies(pd.DataFrame.from_records(tasks),
-                                          prefix_sep=column_value_separator).fillna(0)
-        hotenc_workflow_data = pd.get_dummies(pd.DataFrame.from_records(workflows),
-                                              prefix_sep=column_value_separator).fillna(0)
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
             tasks_historical_data = pd.read_csv(task_historical_data_path)
             workflow_historical_data = pd.read_csv(workflow_historical_data_path)
             try:
                 print("Initialising Random Forest step...")
                 tasks_results = RandomForest.predict(tasks_historical_data,
-                                                     hotenc_task_data,
+                                                     tasks,
                                                      task_rf_label_map)
                 workflow_results = RandomForest.predict(workflow_historical_data,
-                                                        hotenc_workflow_data,
+                                                        workflows,
                                                         workflow_rf_label_map)
                 print("Random Forest step successful! \n")
             except KeyError:
@@ -82,13 +77,11 @@ def analyse(report_path,
             try:
                 print("Initialising results analysis step...")
                 new_task_dataframe, task_features = AnalyseResults.analyse(tasks_results,
-                                                                           hotenc_task_data,
-                                                                           task_rf_label_map,
-                                                                           column_value_separator)
+                                                                           tasks,
+                                                                           task_rf_label_map)
                 new_workflow_dataframe, workflow_features = AnalyseResults.analyse(workflow_results,
-                                                                                   hotenc_workflow_data,
-                                                                                   workflow_rf_label_map,
-                                                                                   column_value_separator)
+                                                                                   workflows,
+                                                                                   workflow_rf_label_map)
                 print("Results analysis step successful! \n")
             except KeyError:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
@@ -108,13 +101,13 @@ def analyse(report_path,
                 raise KeyError
         else:
             print("No historical data available.")
-            print("Saving new workflow execution data to historical data...")
-            add_latest_exec_to_historical_data(task_historical_data_path,
-                                               tasks_historical_data, hotenc_task_data)
-            add_latest_exec_to_historical_data(workflow_historical_data_path,
-                                               workflow_historical_data, hotenc_workflow_data)
-    except (ValueError, KeyError):
-        pass
+        print("Saving new workflow execution data to historical data...")
+        add_latest_exec_to_historical_data(task_historical_data_path,
+                                           tasks_historical_data, tasks)
+        add_latest_exec_to_historical_data(workflow_historical_data_path,
+                                           workflow_historical_data, workflows)
+    except (ValueError, KeyError) as e:
+        print(e)
 
 
 def main():
@@ -125,36 +118,17 @@ def main():
     task_rf_label_map = {'classifier': [], 'regressor': []}
     workflow_rf_label_map = {'classifier': [], 'regressor': []}
 
-    task_classifier_values = get_arguments().task_classifier
-    task_regressor_values = get_arguments().task_regressor
-    wk_classifier_values = get_arguments().wk_classifier
-    wk_regressor_values = get_arguments().wk_regressor
+    task_rf_label_map['classifier'] = [arg for arg in get_arguments().task_classifier]
+    task_rf_label_map['regressor'] = [arg for arg in get_arguments().task_regressor]
+    workflow_rf_label_map['classifier'] = [arg for arg in get_arguments().wk_classifier]
+    workflow_rf_label_map['regressor'] = [arg for arg in get_arguments().wk_regressor]
 
-    # replace the ":" with the more unique separator to avoid confusion when un-encoding the values at the end
-    # we split instead of replacing it directly to make sure the classifier input was passed correctly
-    try:
-        for value in task_classifier_values:
-            value_pair = value.split(":")
-            task_rf_label_map['classifier'].append(value_pair[0] + column_value_separator + value_pair[1])
-
-        for value in wk_classifier_values:
-            value_pair = value.split(":")
-            workflow_rf_label_map['classifier'].append(value_pair[0] + column_value_separator + value_pair[1])
-
-        for value in task_regressor_values:
-            task_rf_label_map['regressor'].append(value)
-        for value in wk_regressor_values:
-            workflow_rf_label_map['regressor'].append(value)
-
-        print("Welcome to the Workflow Analysis System!")
-        print("Starting...")
-        analyse(report_path,
-                json_file_path,
-                task_rf_label_map,
-                workflow_rf_label_map)
-
-    except IndexError:
-        sys.stderr.write("One of the classifier arguments is not formatted properly. Expected format: COLUMN:VALUE\n")
+    print("Welcome to the Workflow Analysis System!")
+    print("Starting...")
+    analyse(report_path,
+            json_file_path,
+            task_rf_label_map,
+            workflow_rf_label_map)
 
     print("Exiting...")
 
@@ -164,6 +138,4 @@ if __name__ == "__main__":
     task_historical_data_path = 'csvs/tasks_historical_data.csv'
     # workflows variables
     workflow_historical_data_path = 'csvs/workflows_historical_data.csv'
-
-    column_value_separator = "!-->"
     main()
