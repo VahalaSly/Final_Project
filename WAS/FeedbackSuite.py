@@ -106,9 +106,14 @@ def make_graph(label, data_pairs, figure_name):
     for pair in data_pairs:
         feature_name = pair[0]
         # cut off names that are too long
-        max_length = 60
-        if len(feature_name) > max_length:
-            feature_name = feature_name[:max_length] + "[...]"
+        max_length = 100
+        half_length = 50
+        if len(feature_name) > half_length:
+            if len(feature_name) > max_length:
+                # cut off names longer than 100 chars
+                feature_name = feature_name[:max_length] + "[...]"
+            # go on a new line for names longer than 50 chars
+            feature_name = feature_name[:half_length] + "-\n" + feature_name[half_length:]
         labels.append(feature_name)
         percentage = pair[1] * 100
         fracs.append(percentage)
@@ -118,7 +123,7 @@ def make_graph(label, data_pairs, figure_name):
         fracs.append(other_percentage)
 
     pie = plt.pie(fracs, labels=labels,
-                  autopct='%1.1f%%', shadow=True, startangle=90)
+                  autopct='%1.1f%%', startangle=90)
 
     # add textures to pie chart wedges for colour clarity
     for i in range(len(pie[0])):

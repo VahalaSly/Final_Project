@@ -16,16 +16,13 @@ def get_correct_prediction_features(low_error, result):
     if low_error:
         for feature, importance in result['features_importance']:
             if importance > 0.1:
-                if "!-->" in feature:
-                    feature = feature.split("!-->")[0]
-                    features.append((feature, importance))
+                features.append((feature, importance))
     return features
 
 
 def analyse(labels_results, input_execution_data, rf_labels):
     # data = undummify(input_execution_data)
     label_features = {}
-    problematic_cells = []
     for rf_type, rf_result in labels_results.items():
         # get the label corresponding to classifier or regressor
         labels = rf_labels[rf_type]
