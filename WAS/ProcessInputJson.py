@@ -5,6 +5,8 @@ import sys
 
 # taken from https://towardsdatascience.com/flattening-json-objects-in-python-f5343c794b10
 def flatten_json(nested_json):
+    # both the workflow and the nodes have the change of being represented by nested lists and dictionaries;
+    # they need to be "flattened" before being stored.
     out = {}
 
     def flatten(json_item, name=''):
@@ -31,9 +33,7 @@ def parse_workflow(environment, workflow, workflows_json, nodes_json):
     try:
         nodes = workflow[nodes_key]
         workflow_name = workflow[name_key]
-    except KeyError as e:
-        print("Could not find mandatory key. Make sure the JSON file is correctly formatted.")
-        sys.stderr.write(str(e) + "\n")
+    except KeyError:
         raise KeyError
     workflow.pop(nodes_key)
     flattened_workflow = flatten_json(workflow)
@@ -58,18 +58,18 @@ def main(filepath):
     environment = {}
     workflow_key = 'workflow'
     # we want to get all the execution information except the workflow information
-    # which are stored in their own variable
+    # which is stored in its own variable
     for key, value in execution_summary.items():
         if key != workflow_key:
             environment[key] = value
     environment = flatten_json(environment)
     try:
         workflow = execution_summary[workflow_key]
+        parse_workflow(environment, workflow, workflow_json, nodes_json)
     except KeyError as e:
-        print("Could not find mandatory key {}. Make sure the JSON file is correctly formatted.".format(workflow_key))
+        print("Could not find mandatory key. Make sure the JSON file is correctly formatted.")
         sys.stderr.write(str(e) + "\n")
         raise KeyError
-    parse_workflow(environment, workflow, workflow_json, nodes_json)
     workflows = json_normalize(workflow_json)
     nodes = json_normalize(nodes_json)
 

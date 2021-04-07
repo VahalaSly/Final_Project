@@ -21,7 +21,6 @@ def get_correct_prediction_features(low_error, result):
 
 
 def analyse(labels_results, input_execution_data, rf_labels):
-    # data = undummify(input_execution_data)
     label_features = {}
     for rf_type, rf_result in labels_results.items():
         # get the label corresponding to classifier or regressor
@@ -33,12 +32,11 @@ def analyse(labels_results, input_execution_data, rf_labels):
                 idx = input_execution_data.columns.get_loc(label) + 1
                 input_execution_data.insert(loc=idx, column="predicted {}".format(label),
                                             value=label_results['predictions'])
-                # get all rows of label to calculate threshold
+                # get all rows of label to calculate error threshold
                 label_rows = input_execution_data[label].to_list()
                 low_error = is_error_under_threshold(rf_type, label_rows, label_results)
                 # if error is too high, the features are not returned
                 features = get_correct_prediction_features(low_error, label_results)
-                # problematic_cells += get_problematic_cells(data, features, label)
                 label_features[label] = features
             except KeyError as e:
                 sys.stderr.write(str(e) + "\n")

@@ -27,7 +27,7 @@ def create_html(workflow_figures, task_figures, workflow_dataframe, task_datafra
     task_row = task_dataframe.shape[0]
     task_col = task_dataframe.shape[1]
 
-    # add columns highlight based on features
+    # add columns/cells highlight based on features
     workflow_styler = workflow_dataframe.style.apply(colourise_cells,
                                                      feature_columns=workflow_features,
                                                      subset=None, axis=None)
