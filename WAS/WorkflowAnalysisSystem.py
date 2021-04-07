@@ -15,16 +15,16 @@ def get_arguments():
                         help="KNIME workflow summary in JSON format", metavar="FILE PATH",
                         required=True)
     parser.add_argument("-ct", "--classify_task", dest="task_classifier",
-                        help="Target node/task KEY:VALUE pairs to be classified", metavar="KEY:VALUE",
+                        help="Target node/task non-continuous KEY to be classified", metavar="KEY",
                         required=False, nargs="*", default='')
     parser.add_argument("-rt", "--regress_task", dest="task_regressor",
                         help="Target node/task continuous numeric KEY to be regressed", metavar="KEY",
                         required=False, nargs="*", default='')
     parser.add_argument("-cw", "--classify_workflow", dest="wk_classifier",
-                        help="Target workflow KEY pairs to be classified", metavar="KEY:VALUE",
+                        help="Target workflow non-continuous KEY to be classified", metavar="KEY",
                         required=False, nargs="*", default='')
     parser.add_argument("-rw", "--regress_workflow", dest="wk_regressor",
-                        help="Target workflow continuous numeric KEY to be regressed", metavar="COLUMN",
+                        help="Target workflow continuous numeric KEY to be regressed", metavar="KEY",
                         required=False, nargs="*", default='')
     return parser.parse_args()
 
@@ -60,8 +60,8 @@ def analyse(report_path,
             raise KeyError
 
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
-            tasks_historical_data = pd.read_csv(task_historical_data_path)
-            workflow_historical_data = pd.read_csv(workflow_historical_data_path)
+            tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
+            workflow_historical_data = pd.read_csv(workflow_historical_data_path, low_memory=False)
             try:
                 print("Initialising Random Forest step...")
                 tasks_results = RandomForest.predict(tasks_historical_data,

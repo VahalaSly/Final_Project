@@ -27,23 +27,27 @@ def parse_workflow(environment, workflow, workflows_json, nodes_json):
     if 'subWorkflow' in workflow.keys():
         workflow = workflow['subWorkflow']
     nodes_key = 'nodes'
+    name_key = 'name'
     try:
-        nodes = workflow['nodes']
+        nodes = workflow[nodes_key]
+        workflow_name = workflow[name_key]
     except KeyError as e:
-        print("Could not find mandatory key {}. Make sure the JSON file is correctly formatted.".format(nodes_key))
+        print("Could not find mandatory key. Make sure the JSON file is correctly formatted.")
         sys.stderr.write(str(e) + "\n")
-        return KeyError
-    workflow.pop('nodes')
+        raise KeyError
+    workflow.pop(nodes_key)
     flattened_workflow = flatten_json(workflow)
     # all workflows share the same environment information
     # so we append that info to each workflow
     flattened_workflow.update(environment)
     workflows_json.append(flattened_workflow)
     for node in nodes:
-        if "subWorkflow" in node.keys():
+        if 'subWorkflow' in node.keys():
             parse_workflow(environment, node, workflows_json, nodes_json)
-        else:
-            nodes_json.append(flatten_json(node))
+            node.pop('subWorkflow')
+        node_json = flatten_json(flatten_json(node))
+        node_json.update({'workflow_name': workflow_name})
+        nodes_json.append(node_json)
 
 
 def main(filepath):
@@ -58,7 +62,7 @@ def main(filepath):
     for key, value in execution_summary.items():
         if key != workflow_key:
             environment[key] = value
-    flatten_json(environment)
+    environment = flatten_json(environment)
     try:
         workflow = execution_summary[workflow_key]
     except KeyError as e:

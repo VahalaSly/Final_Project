@@ -32,7 +32,8 @@ def random_forest(data_sets, rf_instance):
 
 
 def get_t_sets(rf_type, target_label, historical_data, new_data):
-    train, test = historical_data.align(new_data, join='inner', axis=1)
+    train = historical_data.copy(deep=True)
+    test = new_data.copy(deep=True)
 
     le = None
     if rf_type == 'classifier':
@@ -43,10 +44,10 @@ def get_t_sets(rf_type, target_label, historical_data, new_data):
         test[target_label] = le.transform(test[target_label])
 
     # hot encode the categorical features
-    hotenc_hist_data = pd.get_dummies(pd.DataFrame.from_records(train),
-                                      prefix_sep="!-->").fillna(0)
-    hotenc_new_data = pd.get_dummies(pd.DataFrame.from_records(test),
-                                     prefix_sep="!-->").fillna(0)
+    hotenc_hist_data = pd.get_dummies(pd.DataFrame.from_records(train).fillna(-1),
+                                      prefix_sep="!-->")
+    hotenc_new_data = pd.get_dummies(pd.DataFrame.from_records(test).fillna(-1),
+                                     prefix_sep="!-->")
 
     final_train, final_test = hotenc_hist_data.align(hotenc_new_data, join='inner', axis=1)
 
