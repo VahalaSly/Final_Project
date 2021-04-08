@@ -7,6 +7,7 @@ import ProcessInputJson
 import RandomForest
 import FeedbackSuite
 import AnalyseResults
+import TopologicalAnalysis
 
 
 def get_arguments():
@@ -34,8 +35,6 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
         if historical_data is not None:
             # pd.concat creates a union of the two dataframes, adding any new column
             latest_execution = pd.concat([historical_data, latest_execution], ignore_index=True, sort=False)
-            # make sure to fill any NAN cell with 0
-            latest_execution.fillna(0, inplace=True)
         latest_execution.to_csv(historical_data_path, index=False)
     except ValueError as e:
         print("Encountered error while trying to save new data to historical data.")
@@ -50,6 +49,7 @@ def analyse(report_path,
     tasks_historical_data = None
     workflow_historical_data = None
     try:
+        ## STEP 1 ##
         try:
             print("Initialising data pre-processing step...")
             tasks, workflows = ProcessInputJson.main(json_file_path)
@@ -62,6 +62,8 @@ def analyse(report_path,
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
             tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
             workflow_historical_data = pd.read_csv(workflow_historical_data_path, low_memory=False)
+
+            ### STEP 2 ###
             try:
                 print("Initialising Random Forest step...")
                 tasks_results = RandomForest.predict(tasks_historical_data,
@@ -74,22 +76,40 @@ def analyse(report_path,
             except KeyError:
                 sys.stderr.write("Random Forest step unsuccessful :( \n")
                 raise KeyError
+
+            ### STEP 3 ##
             try:
                 print("Initialising results analysis step...")
-                new_task_dataframe, task_features = AnalyseResults.analyse(tasks_results,
-                                                                           tasks,
-                                                                           task_rf_label_map)
-                new_workflow_dataframe, workflow_features = AnalyseResults.analyse(workflow_results,
-                                                                                   workflows,
-                                                                                   workflow_rf_label_map)
+                new_task_dataframe, task_imp_features = AnalyseResults.analyse(tasks_results,
+                                                                               tasks,
+                                                                               task_rf_label_map)
+                new_workflow_dataframe, workflow_imp_features = AnalyseResults.analyse(workflow_results,
+                                                                                       workflows,
+                                                                                       workflow_rf_label_map)
                 print("Results analysis step successful! \n")
             except KeyError:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
                 raise KeyError
+
+            ### STEP 4 ##
+            try:
+                print("Initialising topological analysis step...")
+                TopologicalAnalysis.analyse(tasks_historical_data,
+                                            workflow_historical_data,
+                                            new_task_dataframe,
+                                            new_workflow_dataframe,
+                                            task_imp_features,
+                                            workflow_imp_features)
+                print("Topological analysis step successful! \n")
+            except ValueError:
+                sys.stderr.write("Topological analysis step unsuccessful :( \n")
+                raise KeyError
+
+            ## STEP 5 ##
             try:
                 print("Initialising feedback report step...")
-                report = FeedbackSuite.produce_report(task_features,
-                                                      workflow_features,
+                report = FeedbackSuite.produce_report(task_imp_features,
+                                                      workflow_imp_features,
                                                       new_task_dataframe,
                                                       new_workflow_dataframe,
                                                       report_path)
@@ -102,6 +122,8 @@ def analyse(report_path,
         else:
             print("No historical data available.")
         print("Saving new workflow execution data to historical data...")
+
+        ### STEP 6 ###
         add_latest_exec_to_historical_data(task_historical_data_path,
                                            tasks_historical_data, tasks)
         add_latest_exec_to_historical_data(workflow_historical_data_path,
