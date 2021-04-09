@@ -12,14 +12,14 @@ def colourise_cells(dataframe, feature_columns):
                 split_feat = feature.split("!-->", 1)
                 column = split_feat[0]
                 value = split_feat[1]
-                if dataframe.iloc[index][column] == value:
-                    df1.iloc[index][column] = 'background-color:yellow'
+                if dataframe.loc[index, column] == value:
+                    df1.loc[index, column] = 'background-color:yellow'
             else:
-                df1.iloc[index][feature] = 'background-color:yellow'
+                df1.loc[index, feature] = 'background-color:yellow'
     return df1
 
 
-def create_html(workflow_figures, task_figures, workflow_dataframe, task_dataframe,
+def create_xlsx(workflow_figures, task_figures, workflow_dataframe, task_dataframe,
                 workflow_features, task_features, report_filepath):
     # these values are used to position the figures
     workflow_row = workflow_dataframe.shape[0]
@@ -35,8 +35,8 @@ def create_html(workflow_figures, task_figures, workflow_dataframe, task_datafra
                                              subset=None, axis=None)
 
     writer = pd.ExcelWriter(report_filepath, engine='xlsxwriter')
-    workflow_styler.to_excel(writer, sheet_name='Workflow Analysis', index=False)
-    task_styler.to_excel(writer, sheet_name='Task Analysis', index=False)
+    workflow_styler.to_excel(writer, sheet_name='Workflow Analysis')
+    task_styler.to_excel(writer, sheet_name='Task Analysis')
 
     # add figures
     col = 0
@@ -86,7 +86,7 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
     xlsx_file = "{}/execution_report_{}.xlsx".format(report_path, timestamp)
 
     try:
-        create_html(workflow_figures, task_figures, workflow_dataset, task_dataset,
+        create_xlsx(workflow_figures, task_figures, workflow_dataset, task_dataset,
                     workflow_features_list, task_features_list, xlsx_file)
         return xlsx_file
     except TypeError as e:
@@ -98,10 +98,18 @@ def make_graph(label, data_pairs, figure_name):
     # make a square figure and axes
     plt.figure(1, figsize=(10, 4))
     patterns = ["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"]
+    plt.rcParams.update(
+        {
+            'text.usetex': False,
+            'font.family': 'sans-serif',
+            'mathtext.fontset': 'stix',
+            'hatch.color': 'darkslategrey'
+        }
+    )
 
-    # The slices will be ordered and plotted counter-clockwise.
-    labels = []
-    fracs = []
+    # prepare labels and fractions
+    features = []
+    importances = []
     other_percentage = 100
     for pair in data_pairs:
         feature_name = pair[0]
@@ -114,22 +122,19 @@ def make_graph(label, data_pairs, figure_name):
                 feature_name = feature_name[:max_length] + "[...]"
             # go on a new line for names longer than 50 chars
             feature_name = feature_name[:half_length] + "-\n" + feature_name[half_length:]
-        labels.append(feature_name)
+        features.append(feature_name)
         percentage = pair[1] * 100
-        fracs.append(percentage)
+        importances.append(percentage)
         other_percentage -= percentage
     if other_percentage > 0:
-        labels.append("Unknown")
-        fracs.append(other_percentage)
+        features.append("Unknown")
+        importances.append(other_percentage)
 
-    pie = plt.pie(fracs, labels=labels,
+    pie = plt.pie(importances, labels=features,
                   autopct='%1.1f%%', startangle=90)
-
     # add textures to pie chart wedges for colour clarity
     for i in range(len(pie[0])):
         pie[0][i].set_hatch(patterns[i % len(patterns)])
-
-    plt.rcParams['hatch.color'] = 'darkslategrey'
 
     plt.title("Which features affect the {}?".format(label), bbox={'facecolor': '0.8', 'pad': 5})
     plt.savefig("{}".format(figure_name))

@@ -6,22 +6,22 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
 
 
-def get_numerical_feature_importance(rf, feature_columns):
+def get_features_importance(rf, feature_names):
     # get the list of features and their gini importance
     importance_list = list(rf.feature_importances_)
-    # round the importance and tuple feature name with its value
+    # round the importance and tuple feature name with its importance value
     feature_importance = [(feature, round(importance, 2)) for feature, importance in
-                          zip(feature_columns, importance_list)]
+                          zip(feature_names, importance_list)]
     return feature_importance
 
 
 def random_forest(label_set, train_features, test_features, rf_instance):
-    feature_headers = list(test_features.columns)
+    feature_names = list(test_features.columns)
     rf_instance.fit(train_features, label_set['train_labels'])
     predictions = rf_instance.predict(test_features)
     errors = abs(predictions - label_set['test_labels'])
     mean_error = round(np.mean(errors), 2)
-    features_importance = get_numerical_feature_importance(rf_instance, feature_headers)
+    features_importance = get_features_importance(rf_instance, feature_names)
 
     if label_set['encoder'] is not None:
         predictions = label_set['encoder'].inverse_transform(predictions)

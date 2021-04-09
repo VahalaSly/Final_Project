@@ -2,6 +2,7 @@ import sys
 
 
 def is_error_under_threshold(rf_type, label_rows, label_results):
+    print("Error = {}".format(label_results['error']))
     if rf_type == 'classifier' and label_results['error'] < 0.2:
         return True
     elif rf_type == 'regressor':
@@ -21,6 +22,7 @@ def get_correct_prediction_features(low_error, result):
 
 
 def analyse(labels_results, input_execution_data, rf_labels):
+    execution_data = input_execution_data.copy(deep=True)
     label_features = {}
     for rf_type, rf_result in labels_results.items():
         # get the label corresponding to classifier or regressor
@@ -29,11 +31,12 @@ def analyse(labels_results, input_execution_data, rf_labels):
             try:
                 label_results = rf_result[label]
                 # find position of label column to put "[label] prediction" column next to it
-                idx = input_execution_data.columns.get_loc(label) + 1
-                input_execution_data.insert(loc=idx, column="predicted {}".format(label),
+                idx = execution_data.columns.get_loc(label) + 1
+                execution_data.insert(loc=idx, column="predicted {}".format(label),
                                             value=label_results['predictions'])
                 # get all rows of label to calculate error threshold
-                label_rows = input_execution_data[label].to_list()
+                print("Label: {}".format(label))
+                label_rows = execution_data[label].to_list()
                 low_error = is_error_under_threshold(rf_type, label_rows, label_results)
                 # if error is too high, the features are not returned
                 features = get_correct_prediction_features(low_error, label_results)
@@ -41,4 +44,4 @@ def analyse(labels_results, input_execution_data, rf_labels):
             except KeyError as e:
                 sys.stderr.write(str(e) + "\n")
                 raise KeyError
-    return input_execution_data, label_features
+    return execution_data, label_features

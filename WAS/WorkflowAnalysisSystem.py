@@ -3,11 +3,11 @@ import pandas as pd
 import pathlib
 import os
 import sys
-import ProcessInputJson
-import RandomForest
-import FeedbackSuite
-import AnalyseResults
-import TopologicalAnalysis
+import data_processing.ProcessInputJson as PI
+import data_processing.FeedbackSuite as FS
+import analysis.RandomForest as RF
+import analysis.AnalyseResults as AR
+import analysis.TopologicalAnalysis as TA
 
 
 def get_arguments():
@@ -39,7 +39,6 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
     except ValueError as e:
         print("Encountered error while trying to save new data to historical data.")
         print(e)
-        print("Exiting...")
 
 
 def analyse(report_path,
@@ -52,12 +51,12 @@ def analyse(report_path,
         ## STEP 1 ##
         try:
             print("Initialising data pre-processing step...")
-            tasks, workflows = ProcessInputJson.main(json_file_path)
+            tasks, workflows = PI.json_to_dataframe(json_file_path)
             print("Data pre-processing step successful! \n")
         except KeyError as e:
             sys.stderr.write("Data pre-processing step unsuccessful :( \n")
             sys.stderr.write(str(e))
-            raise KeyError
+            raise e
 
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
             tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
@@ -66,59 +65,57 @@ def analyse(report_path,
             ### STEP 2 ###
             try:
                 print("Initialising Random Forest step...")
-                tasks_results = RandomForest.predict(tasks_historical_data,
-                                                     tasks,
-                                                     task_rf_label_map)
-                workflow_results = RandomForest.predict(workflow_historical_data,
-                                                        workflows,
-                                                        workflow_rf_label_map)
+                tasks_results = RF.predict(tasks_historical_data,
+                                           tasks,
+                                           task_rf_label_map)
+                workflow_results = RF.predict(workflow_historical_data,
+                                              workflows,
+                                              workflow_rf_label_map)
                 print("Random Forest step successful! \n")
-            except KeyError:
+            except KeyError as e:
                 sys.stderr.write("Random Forest step unsuccessful :( \n")
-                raise KeyError
+                raise e
 
             ### STEP 3 ##
             try:
                 print("Initialising results analysis step...")
-                new_task_dataframe, task_imp_features = AnalyseResults.analyse(tasks_results,
-                                                                               tasks,
-                                                                               task_rf_label_map)
-                new_workflow_dataframe, workflow_imp_features = AnalyseResults.analyse(workflow_results,
-                                                                                       workflows,
-                                                                                       workflow_rf_label_map)
+                new_task_dataframe, task_imp_features = AR.analyse(tasks_results,
+                                                                   tasks,
+                                                                   task_rf_label_map)
+                new_workflow_dataframe, workflow_imp_features = AR.analyse(workflow_results,
+                                                                           workflows,
+                                                                           workflow_rf_label_map)
                 print("Results analysis step successful! \n")
-            except KeyError:
+            except KeyError as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
-                raise KeyError
+                raise e
 
             ### STEP 4 ##
             try:
                 print("Initialising topological analysis step...")
-                TopologicalAnalysis.analyse(tasks_historical_data,
-                                            workflow_historical_data,
-                                            new_task_dataframe,
-                                            new_workflow_dataframe,
-                                            task_imp_features,
-                                            workflow_imp_features)
+                TA.analyse(tasks_historical_data,
+                           new_task_dataframe,
+                           task_imp_features,
+                           task_rf_label_map)
                 print("Topological analysis step successful! \n")
-            except ValueError:
+            except ValueError as e:
                 sys.stderr.write("Topological analysis step unsuccessful :( \n")
-                raise KeyError
+                raise e
 
             ## STEP 5 ##
             try:
                 print("Initialising feedback report step...")
-                report = FeedbackSuite.produce_report(task_imp_features,
-                                                      workflow_imp_features,
-                                                      new_task_dataframe,
-                                                      new_workflow_dataframe,
-                                                      report_path)
+                report = FS.produce_report(task_imp_features,
+                                           workflow_imp_features,
+                                           new_task_dataframe,
+                                           new_workflow_dataframe,
+                                           report_path)
                 print("Feedback report step successful! \n")
                 print("Report file:///{} has been saved. \n".format(report.replace('\\', '/')))
                 print("Workflow Analysis Finished!")
-            except KeyError:
+            except KeyError as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
-                raise KeyError
+                raise e
         else:
             print("No historical data available.")
         print("Saving new workflow execution data to historical data...")
