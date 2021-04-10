@@ -15,18 +15,22 @@ def get_features_importance(rf, feature_names):
     return feature_importance
 
 
-def random_forest(label_set, train_features, test_features, rf_instance):
+def random_forest(label_set, train_features, test_features, rf_instance, rf_type):
     feature_names = list(test_features.columns)
     rf_instance.fit(train_features, label_set['train_labels'])
     predictions = rf_instance.predict(test_features)
-    errors = abs(predictions - label_set['test_labels'])
-    mean_error = round(np.mean(errors), 2)
+    if rf_type == 'classifier':
+        c = list(np.array(predictions) == np.array(label_set['test_labels']))
+        mean_error = 1 - c.count(True)/len(c)
+    else:
+        errors = abs(predictions - label_set['test_labels'])
+        mean_error = np.mean(errors)
     features_importance = get_features_importance(rf_instance, feature_names)
 
     if label_set['encoder'] is not None:
         predictions = label_set['encoder'].inverse_transform(predictions)
 
-    return {'predictions': predictions, 'error': mean_error,
+    return {'predictions': predictions, 'error': round(mean_error, 2),
             'features_importance': features_importance}
 
 
@@ -75,12 +79,12 @@ def predict(historical_data, new_data, rf_labels):
                 test_label = new_data[target_label].fillna(-1)
                 label_set = get_label_set(rf, train_label,
                                           test_label)
-                rf_type = None
+                rf_instance = None
                 if rf == "classifier":
-                    rf_type = RandomForestClassifier(n_estimators=128)
+                    rf_instance = RandomForestClassifier(n_estimators=128)
                 if rf == "regressor":
-                    rf_type = RandomForestRegressor(n_estimators=128)
-                results = random_forest(label_set, hotenc_train_feat, hotenc_test_feat, rf_type)
+                    rf_instance = RandomForestRegressor(n_estimators=128)
+                results = random_forest(label_set, hotenc_train_feat, hotenc_test_feat, rf_instance, rf)
                 results_dict[rf][target_label] = results
             except KeyError as e:
                 sys.stderr.write(str(e) + "\n")
