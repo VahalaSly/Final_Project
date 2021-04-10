@@ -93,10 +93,10 @@ def analyse(report_path,
             ### STEP 4 ##
             try:
                 print("Initialising topological analysis step...")
-                TA.analyse(tasks_historical_data,
-                           new_task_dataframe,
-                           task_imp_features,
-                           task_rf_label_map)
+                paths_stats = TA.analyse(tasks_historical_data,
+                                         new_task_dataframe,
+                                         task_imp_features,
+                                         task_rf_label_map)
                 print("Topological analysis step successful! \n")
             except ValueError as e:
                 sys.stderr.write("Topological analysis step unsuccessful :( \n")
@@ -109,6 +109,7 @@ def analyse(report_path,
                                            workflow_imp_features,
                                            new_task_dataframe,
                                            new_workflow_dataframe,
+                                           paths_stats,
                                            report_path)
                 print("Feedback report step successful! \n")
                 print("Report file:///{} has been saved. \n".format(report.replace('\\', '/')))

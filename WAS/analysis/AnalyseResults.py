@@ -9,14 +9,14 @@ def is_error_under_threshold(rf_type, label_rows, label_results):
         mean_label_value = sum(abs(number) for number in label_rows) / len(label_rows)
         if label_results['error'] < mean_label_value * 0.2:
             return True
-    return True
+    return False
 
 
 def get_correct_prediction_features(low_error, result):
     features = []
     if low_error:
         for feature, importance in result['features_importance']:
-            if importance > 0.1:
+            if importance > 0.05:
                 features.append((feature, importance))
     return features
 
