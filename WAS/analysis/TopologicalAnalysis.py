@@ -4,13 +4,21 @@ import pandas as pd
 def create_graph(dataframe):
     # the successors are divided among multiple columns
     # this finds all of these columns (through regex search)
-    successors = dataframe.filter(regex='successors').filter(regex='id')
-    if len(successors.columns) != 0:
+    graph = {}
+    all_successors = dataframe.filter(regex='successors').filter(regex='id')
+    if len(all_successors.columns) != 0:
         # puts all of the successors columns together and drops empty
-        successors = successors.T.apply(lambda x: x.dropna().tolist())
-        # TODO: If dataframe['name'] key already exists, append successors instead
-        return dict(zip(dataframe['name'], successors))
-    return dict(zip(dataframe['name'], []))
+        all_successors = all_successors.T.apply(lambda x: x.dropna().tolist())
+        names = list(dataframe['name'])
+        for i in range(0, len(names)):
+            name = names[i]
+            successors = all_successors[i]
+            if name in graph.keys():
+                graph[name] = list(set(graph[name]).union(set(successors)))
+            else:
+                graph[name] = successors
+    print(graph)
+    return graph
 
 
 # https://www.python.org/doc/essays/graphs/
@@ -84,7 +92,8 @@ def analyse(tsk_hist_data,
         for reachable_node in reachable_nodes:
             # ...find all the paths in historical data between these two nodes
             current_workflow_paths = find_all_paths(new_data_graph, node, reachable_node)
-            for path in find_all_paths(hist_data_graph, node, reachable_node):
+            hist_workflow_paths = find_all_paths(hist_data_graph, node, reachable_node)
+            for path in hist_workflow_paths:
                 # finally, for each path found calculate the ratios of the features and labels!
                 get_columns_ratio(path, imp_columns, tsk_hist_data, paths_statistics)
                 paths_statistics['path'].append(path)
