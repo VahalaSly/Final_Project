@@ -53,7 +53,7 @@ def analyse(report_path,
             print("Initialising data pre-processing step...")
             tasks, workflows = PI.json_to_dataframe(json_file_path)
             print("Data pre-processing step successful! \n")
-        except KeyError as e:
+        except (KeyError, ValueError) as e:
             sys.stderr.write("Data pre-processing step unsuccessful :( \n")
             sys.stderr.write(str(e))
             raise e
@@ -72,7 +72,7 @@ def analyse(report_path,
                                               workflows,
                                               workflow_rf_label_map)
                 print("Random Forest step successful! \n")
-            except KeyError as e:
+            except (KeyError, ValueError) as e:
                 sys.stderr.write("Random Forest step unsuccessful :( \n")
                 raise e
 
@@ -86,7 +86,7 @@ def analyse(report_path,
                                                                            workflows,
                                                                            workflow_rf_label_map)
                 print("Results analysis step successful! \n")
-            except KeyError as e:
+            except (KeyError, ValueError) as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
                 raise e
 
@@ -98,7 +98,7 @@ def analyse(report_path,
                                          task_imp_features,
                                          task_rf_label_map)
                 print("Topological analysis step successful! \n")
-            except ValueError as e:
+            except (KeyError, ValueError) as e:
                 sys.stderr.write("Topological analysis step unsuccessful :( \n")
                 raise e
 
@@ -114,7 +114,7 @@ def analyse(report_path,
                 print("Feedback report step successful! \n")
                 print("Report file:///{} has been saved. \n".format(report.replace('\\', '/')))
                 print("Workflow Analysis Finished!")
-            except KeyError as e:
+            except (KeyError, ValueError) as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
                 raise e
         else:
