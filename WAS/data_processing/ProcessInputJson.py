@@ -51,15 +51,6 @@ def parse_workflow(environment, workflow, workflows_json, nodes_json):
         nodes_json.append(node_json)
 
 
-def successors_id_to_name(dataframe):
-    dataframe.set_index('id', inplace=True, drop=True)
-    for col in dataframe.columns:
-        if 'successors' and 'id' in col:
-            for index in dataframe[col].index:
-                if dataframe.loc[index, col] is not np.nan:
-                    dataframe.loc[index, col] = dataframe.loc[dataframe.loc[index, col], 'name']
-
-
 def json_to_dataframe(filepath):
     data = open(filepath).read()
     execution_summary = json.loads(data)
@@ -78,7 +69,6 @@ def json_to_dataframe(filepath):
         parse_workflow(environment, workflow, workflow_json, nodes_json)
         workflows = json_normalize(workflow_json)
         nodes = json_normalize(nodes_json)
-        successors_id_to_name(nodes)
     except KeyError as e:
         print("Could not find mandatory key. Make sure the JSON file is correctly formatted.")
         sys.stderr.write(str(e) + "\n")
