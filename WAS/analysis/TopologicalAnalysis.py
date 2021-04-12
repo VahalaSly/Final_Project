@@ -17,7 +17,6 @@ def create_graph(dataframe):
                 graph[name] = list(set(graph[name]).union(set(successors)))
             else:
                 graph[name] = successors
-    print(graph)
     return graph
 
 
@@ -35,18 +34,20 @@ def find_all_paths(graph, start, end, path=None):
         if node not in path:
             newpaths = find_all_paths(graph, node, end, path)
             for newpath in newpaths:
-                paths.append(newpath)
+                if newpath not in paths:
+                    paths.append(newpath)
     return paths
 
 
-def find_all_reachable_nodes(reachable_nodes, graph, node):
-    if len(graph[node]) == 0:
-        return
+def find_all_reachable_nodes(graph, node, reachable_nodes=None):
+    if reachable_nodes is None:
+        reachable_nodes = []
     for successor in graph[node]:
-        if successor not in reachable_nodes:
+        if successor not in reachable_nodes and successor != node:
             reachable_nodes.append(successor)
-        if successor != node:
-            find_all_reachable_nodes(reachable_nodes, graph, successor)
+            find_all_reachable_nodes(graph, successor, reachable_nodes)
+    # return set to avoid repetition of nodes
+    return set(reachable_nodes)
 
 
 def get_columns_ratio(hist_path, target_columns, hist_data, ratios_and_means):
@@ -71,7 +72,6 @@ def analyse(tsk_hist_data,
     # this dictionary will be used to store the ratios and means of each path
     paths_statistics = {}
     paths_statistics['path'] = []
-    paths_statistics['in current workflow?'] = []
     imp_columns = []
     for feature_pair in list(set().union(*tsk_imp_feat.values())):
         if len(feature_pair) > 0:
@@ -86,21 +86,21 @@ def analyse(tsk_hist_data,
 
     for node in new_data_graph:
         # first, for each node find all the nodes it can reach (aka find all point A and point B on the new data nodes)
-        reachable_nodes = []
-        find_all_reachable_nodes(reachable_nodes, new_data_graph, node)
+        reachable_nodes = find_all_reachable_nodes(new_data_graph, node)
         # then, for each node that can be reached by current node...
         for reachable_node in reachable_nodes:
-            # ...find all the paths in historical data between these two nodes
-            current_workflow_paths = find_all_paths(new_data_graph, node, reachable_node)
-            hist_workflow_paths = find_all_paths(hist_data_graph, node, reachable_node)
-            for path in hist_workflow_paths:
-                # finally, for each path found calculate the ratios of the features and labels!
-                get_columns_ratio(path, imp_columns, tsk_hist_data, paths_statistics)
-                paths_statistics['path'].append(path)
-                if path in current_workflow_paths:
-                    paths_statistics['in current workflow?'].append(True)
-                else:
-                    paths_statistics['in current workflow?'].append(False)
+            if node != reachable_node:
+                # ...find all the paths in historical data between these two nodes
+                current_workflow_paths = find_all_paths(new_data_graph, node, reachable_node)
+                hist_workflow_paths = find_all_paths(hist_data_graph, node, reachable_node)
+                for path in hist_workflow_paths:
+                    # ...finally, for each path found calculate the ratios of the features and labels!
+                    get_columns_ratio(path, imp_columns, tsk_hist_data, paths_statistics)
+                    paths_statistics['path'].append(path)
+                    if path in current_workflow_paths:
+                        paths_statistics['in current workflow?'].append(True)
+                    else:
+                        paths_statistics['in current workflow?'].append(False)
 
     # store the paths statistics results into new dataframe
     stats = pd.DataFrame.from_dict(paths_statistics, orient='index').transpose()
