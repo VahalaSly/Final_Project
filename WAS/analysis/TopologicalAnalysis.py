@@ -20,47 +20,6 @@ def create_graph(dataframe):
     return graph
 
 
-# https://www.python.org/doc/essays/graphs/
-def find_all_paths(graph, start, end, path=None):
-    if path is None:
-        path = []
-    path = path + [start]
-    if start == end:
-        return [path]
-    if start not in graph:
-        return []
-    paths = []
-    for node in graph[start]:
-        if node not in path:
-            newpaths = find_all_paths(graph, node, end, path)
-            for newpath in newpaths:
-                if newpath not in paths:
-                    paths.append(newpath)
-    return paths
-
-
-def find_all_reachable_nodes(graph, node, reachable_nodes=None):
-    if reachable_nodes is None:
-        reachable_nodes = []
-    for successor in graph[node]:
-        if successor not in reachable_nodes and successor != node:
-            reachable_nodes.append(successor)
-            find_all_reachable_nodes(graph, successor, reachable_nodes)
-    # return set to avoid repetition of nodes
-    return set(reachable_nodes)
-
-
-def get_columns_ratio(path, target_columns, dataframe, ratios_and_means):
-    for column in target_columns:
-        relevant_data = dataframe.loc[dataframe['name'].isin(path)]
-        if relevant_data[column].dtype == 'object':
-            count = relevant_data[column].value_counts(normalize=True)
-            ratios_and_means[column].append(["{}, ratio: {} | ".format(value, ratio) for value, ratio in count.items()])
-        else:
-            ratios_and_means[column].append(relevant_data[column].mean())
-    return ratios_and_means
-
-
 def find_start_end_of_branches(graph):
     start_nodes = []
     end_nodes = []
@@ -84,11 +43,69 @@ def find_start_end_of_branches(graph):
     return start_nodes, end_nodes
 
 
-def ids_to_names(path, dataframe):
-    named_tasks = []
-    for task in path:
-        named_tasks.append(str(dataframe.loc[task, 'name']))
-    return named_tasks
+# https://www.python.org/doc/essays/graphs/
+def find_all_paths(graph, start, end, path=None):
+    if path is None:
+        path = []
+    path = path + [start]
+    if start == end:
+        return [path]
+    if start not in graph:
+        return []
+    paths = []
+    for node in graph[start]:
+        if node not in path:
+            newpaths = find_all_paths(graph, node, end, path)
+            for newpath in newpaths:
+                if newpath not in paths:
+                    paths.append(newpath)
+    return paths
+
+
+def get_ratio_or_mean(df, column):
+    if df[column].dtype == 'object':
+        # get overall tasks ratios
+        count = df[column].value_counts(normalize=True)
+        return ["{}, ratio: {} | ".format(value, ratio) for value, ratio in count.items()]
+    else:
+        return df[column].mean()
+
+
+def get_statistics(branch, target_columns, hist_dataframe, new_dataframe):
+    path_statistics = {}
+    # assigning path key so it can be first in the dataframe
+    # just for aesthetic reasons
+    path_statistics['path'] = []
+    for column in target_columns:
+        # for each column, we create one key for workflow-branch specific stats
+        # and one key for overall stats for each task
+        overall_tasks_col_key = "overall_tasks_{}".format(column)
+        wk_specific_col_key = "branch_specific_{}".format(column)
+        if overall_tasks_col_key not in path_statistics.keys():
+            path_statistics[overall_tasks_col_key] = []
+        if wk_specific_col_key not in path_statistics.keys():
+            path_statistics[wk_specific_col_key] = []
+
+        wk_relevant_data_df = pd.DataFrame(columns=hist_dataframe.columns)
+        overall_relevant_data_df = pd.DataFrame(columns=hist_dataframe.columns)
+        named_tasks = []
+        for task in branch:
+            # the workflow specific data needs to match both the workflow_name of the task and its ID
+            workflow_name = new_dataframe.loc[task, 'workflow_name']
+            # TODO: These for some reason are returning false even when they should return true.
+            wk_relevant_data_df.append(hist_dataframe.loc[(hist_dataframe['id'] == str(task)) &
+                                                          (hist_dataframe['workflow_name'] ==
+                                                           str(workflow_name))])
+            # for the overall data, it just needs to match the name
+            task_name = new_dataframe.loc[task, 'name']
+            named_tasks.append(task_name)
+            overall_relevant_data_df.append(hist_dataframe.loc[hist_dataframe['name'] ==
+                                                               str(task_name)])
+
+        path_statistics['path'] = named_tasks
+        path_statistics[overall_tasks_col_key].append(get_ratio_or_mean(overall_relevant_data_df, column))
+        path_statistics[wk_specific_col_key].append(get_ratio_or_mean(wk_relevant_data_df, column))
+    return path_statistics
 
 
 def analyse(tsk_hist_data,
@@ -99,8 +116,6 @@ def analyse(tsk_hist_data,
 
     # create a dictionary with a key for each feature and label
     # this dictionary will be used to store the ratios and means of each path
-    paths_statistics = {}
-    paths_statistics['path'] = []
     imp_columns = []
     for feature_pair in list(set().union(*tsk_imp_feat.values())):
         if len(feature_pair) > 0:
@@ -109,33 +124,31 @@ def analyse(tsk_hist_data,
             if "!-->" in feature:
                 feature = feature.split("!-->")[0]
             imp_columns.append(feature)
-            paths_statistics[feature] = []
     for label in list(set().union(*tsk_rf_label_map.values())):
-        paths_statistics[label] = []
         imp_columns.append(label)
 
     # remove any duplicate column
     imp_columns = set(imp_columns)
 
-    # we set the id to index to facilitate task id_to_name conversion
-    tsk_new_exec.set_index('id', inplace=True, drop=True)
+    # we set the id to index to facilitate task's id to name conversion
+    ided_tsks_new_exec = tsk_new_exec.set_index('id', inplace=False, drop=True)
     start_nodes, end_nodes = find_start_end_of_branches(new_data_graph)
     # we get all the nodes that have been recognised as starting or ending a branch
     # for each of the starting/ending pair, we find the paths...
+    current_workflow_branches = []
     for start_node in start_nodes:
         for end_node in end_nodes:
+            # some start nodes of paths might also be end nodes of other paths.
+            # We do not want to look for paths between the same node.
             if start_node != end_node:
-                # ...find all the paths between these two nodes...
-                current_workflow_paths = find_all_paths(new_data_graph, start_node, end_node)
-                # ... if there is more than one path, then we know we are interested...
-                if len(current_workflow_paths) > 1:
-                    for path in current_workflow_paths:
-                        # ...finally, for each of the branches calculate the ratios of the features and labels!
-                        path = ids_to_names(path, tsk_new_exec)
-                        get_columns_ratio(path, imp_columns, tsk_hist_data, paths_statistics)
-                        paths_statistics['path'].append(path)
-
+                found_paths = find_all_paths(new_data_graph, start_node, end_node)
+                # if there's more than one path (branch) between two nodes:
+                if len(found_paths) > 1:
+                    current_workflow_branches += found_paths
+    # once we have all the branches, we retrieve the labels and features information
+    statistics = []
+    for branch in current_workflow_branches:
+        statistics.append(get_statistics(branch, imp_columns, tsk_hist_data, ided_tsks_new_exec))
     # store the paths statistics results into new dataframe
-    stats = pd.DataFrame.from_dict(paths_statistics, orient='index').transpose()
-
+    stats = pd.DataFrame(statistics)
     return stats

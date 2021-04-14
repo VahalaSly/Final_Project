@@ -63,17 +63,21 @@ def analyse(report_path,
     try:
         ## STEP 1 ##
         try:
+
             print("Initialising data pre-processing step...")
-            tasks, workflows = PI.json_to_dataframe(json_file_path)
-            # if the user has selected some specific features, then remove all the others
+            task_df, workflow_df = PI.json_to_dataframe(json_file_path)
+            # if the user has selected some specific features, then only use these for the ML analysis
             if len(task_features) > 0:
-                # check if id among the features, if not add since its needed for topological analysis
-                if 'id' not in task_features:
-                    task_features = task_features + ['id']
-                tasks = tasks[task_features]
+                task_filtered_df = task_df[task_features].copy(deep=True)
+            else:
+                task_filtered_df = task_df.copy(deep=True)
+
             if len(workflow_features) > 0:
-                workflows = workflows[workflow_features]
+                workflow_filtered_df = workflow_df[workflow_features].copy(deep=True)
+            else:
+                workflow_filtered_df = workflow_df.copy(deep=True)
             print("Data pre-processing step successful! \n")
+
         except (KeyError, ValueError) as e:
             sys.stderr.write("Data pre-processing step unsuccessful :( \n")
             sys.stderr.write(str(e))
@@ -87,10 +91,10 @@ def analyse(report_path,
             try:
                 print("Initialising Random Forest step...")
                 tasks_results = RF.predict(tasks_historical_data,
-                                           tasks,
+                                           task_filtered_df,
                                            task_rf_label_map)
                 workflow_results = RF.predict(workflow_historical_data,
-                                              workflows,
+                                              workflow_filtered_df,
                                               workflow_rf_label_map)
                 print("Random Forest step successful! \n")
             except (KeyError, ValueError) as e:
@@ -101,10 +105,10 @@ def analyse(report_path,
             try:
                 print("Initialising results analysis step...")
                 new_task_dataframe, task_imp_features = AR.analyse(tasks_results,
-                                                                   tasks,
+                                                                   task_filtered_df,
                                                                    task_rf_label_map)
                 new_workflow_dataframe, workflow_imp_features = AR.analyse(workflow_results,
-                                                                           workflows,
+                                                                           workflow_filtered_df,
                                                                            workflow_rf_label_map)
                 print("Results analysis step successful! \n")
             except (KeyError, ValueError) as e:
@@ -115,7 +119,7 @@ def analyse(report_path,
             try:
                 print("Initialising topological analysis step...")
                 paths_stats = TA.analyse(tasks_historical_data,
-                                         new_task_dataframe,
+                                         task_df,
                                          task_imp_features,
                                          task_rf_label_map)
                 print("Topological analysis step successful! \n")
@@ -144,9 +148,9 @@ def analyse(report_path,
 
         ### STEP 6 ###
         add_latest_exec_to_historical_data(task_historical_data_path,
-                                           tasks_historical_data, tasks)
+                                           tasks_historical_data, task_df)
         add_latest_exec_to_historical_data(workflow_historical_data_path,
-                                           workflow_historical_data, workflows)
+                                           workflow_historical_data, workflow_df)
     except (ValueError, KeyError) as e:
         print(e)
 

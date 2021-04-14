@@ -21,8 +21,7 @@ def get_correct_prediction_features(low_error, result):
     return features
 
 
-def analyse(labels_results, input_execution_data, rf_labels):
-    execution_data = input_execution_data.copy(deep=True)
+def analyse(labels_results, execution_data, rf_labels):
     label_features = {}
     for rf_type, rf_result in labels_results.items():
         # get the label corresponding to classifier or regressor
