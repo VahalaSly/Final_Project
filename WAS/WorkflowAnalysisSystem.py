@@ -11,20 +11,29 @@ import analysis.TopologicalAnalysis as TA
 
 
 def get_arguments():
-    parser = ArgumentParser()
+    parser = ArgumentParser(fromfile_prefix_chars='@')
     parser.add_argument("-f", "--file", dest="filepath",
                         help="KNIME workflow summary in JSON format", metavar="FILE PATH",
                         required=True)
-    parser.add_argument("-ct", "--classify_task", dest="task_classifier",
+    parser.add_argument("-d", "--historical_dir", dest="hist_dir",
+                        help="Destination directory for storage of tasks historical execution data", metavar="DIR PATH",
+                        required=True)
+    parser.add_argument("-tf", "--task_features", dest="task_features",
+                        help="Features of interest for tasks. If none, defaults to all.", metavar="FEATURE",
+                        required=False, nargs="*", default='')
+    parser.add_argument("-wf", "--workflow_features", dest="workflow_features",
+                        help="Features of interest for workflows. If none, defaults to all.", metavar="FEATURE",
+                        required=False, nargs="*", default='')
+    parser.add_argument("-tc", "--task_classifier", dest="task_classifier",
                         help="Target node/task non-continuous KEY to be classified", metavar="KEY",
                         required=False, nargs="*", default='')
-    parser.add_argument("-rt", "--regress_task", dest="task_regressor",
+    parser.add_argument("-tr", "--task_regressor", dest="task_regressor",
                         help="Target node/task continuous numeric KEY to be regressed", metavar="KEY",
                         required=False, nargs="*", default='')
-    parser.add_argument("-cw", "--classify_workflow", dest="wk_classifier",
+    parser.add_argument("-wc", "--workflow_classifier", dest="wk_classifier",
                         help="Target workflow non-continuous KEY to be classified", metavar="KEY",
                         required=False, nargs="*", default='')
-    parser.add_argument("-rw", "--regress_workflow", dest="wk_regressor",
+    parser.add_argument("-wr", "--workflow_regressor", dest="wk_regressor",
                         help="Target workflow continuous numeric KEY to be regressed", metavar="KEY",
                         required=False, nargs="*", default='')
     return parser.parse_args()
@@ -43,6 +52,10 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
 
 def analyse(report_path,
             json_file_path,
+            task_historical_data_path,
+            workflow_historical_data_path,
+            task_features,
+            workflow_features,
             task_rf_label_map,
             workflow_rf_label_map):
     tasks_historical_data = None
@@ -52,6 +65,14 @@ def analyse(report_path,
         try:
             print("Initialising data pre-processing step...")
             tasks, workflows = PI.json_to_dataframe(json_file_path)
+            # if the user has selected some specific features, then remove all the others
+            if len(task_features) > 0:
+                # check if id among the features, if not add since its needed for topological analysis
+                if 'id' not in task_features:
+                    task_features = task_features + ['id']
+                tasks = tasks[task_features]
+            if len(workflow_features) > 0:
+                workflows = workflows[workflow_features]
             print("Data pre-processing step successful! \n")
         except (KeyError, ValueError) as e:
             sys.stderr.write("Data pre-processing step unsuccessful :( \n")
@@ -131,22 +152,44 @@ def analyse(report_path,
 
 
 def main():
+    arguments = get_arguments()
+
     absolute_path = pathlib.Path(__file__).parent.absolute()
-    json_file_path = "{}/{}".format(absolute_path, get_arguments().filepath)
+    json_file_path = "{}/{}".format(absolute_path, arguments.filepath)
+    historical_directory = arguments.hist_dir
+
+    # each user can select its own directory to store the historical data
+    # this checks whether the directory exists, and if it doesn't, creates it
+    if not os.path.exists(historical_directory):
+        os.makedirs(historical_directory)
+
+    # create the hist filepaths for both tasks and workflows
+    task_historical_data_path = "{}/{}/tasks_historical_data.csv".format(
+        absolute_path, historical_directory)
+    workflow_historical_data_path = "{}/{}/workflow_historical_data.csv".format(
+        absolute_path, historical_directory)
     report_path = '{}/../reports'.format(absolute_path)
+
+    # retrieve the rest of the command-line arguments
+    task_features = arguments.task_features
+    workflow_features = arguments.workflow_features
 
     task_rf_label_map = {'classifier': [], 'regressor': []}
     workflow_rf_label_map = {'classifier': [], 'regressor': []}
 
-    task_rf_label_map['classifier'] = [arg for arg in get_arguments().task_classifier]
-    task_rf_label_map['regressor'] = [arg for arg in get_arguments().task_regressor]
-    workflow_rf_label_map['classifier'] = [arg for arg in get_arguments().wk_classifier]
-    workflow_rf_label_map['regressor'] = [arg for arg in get_arguments().wk_regressor]
+    task_rf_label_map['classifier'] = [arg for arg in arguments.task_classifier]
+    task_rf_label_map['regressor'] = [arg for arg in arguments.task_regressor]
+    workflow_rf_label_map['classifier'] = [arg for arg in arguments.wk_classifier]
+    workflow_rf_label_map['regressor'] = [arg for arg in arguments.wk_regressor]
 
     print("Welcome to the Workflow Analysis System!")
     print("Starting...")
     analyse(report_path,
             json_file_path,
+            task_historical_data_path,
+            workflow_historical_data_path,
+            task_features,
+            workflow_features,
             task_rf_label_map,
             workflow_rf_label_map)
 
@@ -154,8 +197,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # tasks variables
-    task_historical_data_path = 'csvs/tasks_historical_data.csv'
-    # workflows variables
-    workflow_historical_data_path = 'csvs/workflows_historical_data.csv'
     main()

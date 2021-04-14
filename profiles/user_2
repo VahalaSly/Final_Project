@@ -1,0 +1,16 @@
+--historical_dir=csvs/user_2
+--task_features
+name
+id
+type
+state
+graphDepth
+factoryKey.className
+executionStatistics.lastExecutionStartTime
+executionStatistics.executionCountSinceReset
+executionStatistics.executionCountSinceStart
+executionStatistics.executionDurationSinceStart
+workflow_name
+--workflow_classifier=name
+--task_classifier=state
+--task_regressor=executionStatistics.executionDurationSinceStart

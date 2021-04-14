@@ -101,7 +101,6 @@ def analyse(tsk_hist_data,
     # this dictionary will be used to store the ratios and means of each path
     paths_statistics = {}
     paths_statistics['path'] = []
-    paths_statistics['in current workflow?'] = []
     imp_columns = []
     for feature_pair in list(set().union(*tsk_imp_feat.values())):
         if len(feature_pair) > 0:
