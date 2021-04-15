@@ -20,7 +20,7 @@ def colourise_cells(dataframe, feature_columns):
 
 
 def create_xlsx(workflow_figures, task_figures, workflow_dataframe, task_dataframe,
-                workflow_features, task_features, paths_stats, report_filepath):
+                workflow_features, task_features, branch_stats, task_stats, report_filepath):
     # these values are used to position the figures
     workflow_row = workflow_dataframe.shape[0]
     workflow_col = workflow_dataframe.shape[1]
@@ -37,7 +37,8 @@ def create_xlsx(workflow_figures, task_figures, workflow_dataframe, task_datafra
     writer = pd.ExcelWriter(report_filepath, engine='xlsxwriter')
     workflow_styler.to_excel(writer, sheet_name='Workflow Analysis')
     task_styler.to_excel(writer, sheet_name='Task Analysis')
-    paths_stats.to_excel(writer, sheet_name='Topological Analysis')
+    branch_stats.to_excel(writer, sheet_name='Branch Topological Analysis')
+    task_stats.to_excel(writer, sheet_name='Task Topological Analysis')
 
     # add figures
     col = 0
@@ -61,7 +62,7 @@ def add_figures_to_sheet(sheet, max_row, max_col, figures):
         col += 12
 
 
-def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, paths_stats, report_path):
+def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, branch_stats, task_stats, report_path):
     task_figures = []
     workflow_figures = []
     # task graphs
@@ -88,7 +89,7 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
 
     try:
         create_xlsx(workflow_figures, task_figures, workflow_dataset, task_dataset,
-                    workflow_features_list, task_features_list, paths_stats, xlsx_file)
+                    workflow_features_list, task_features_list, branch_stats, task_stats, xlsx_file)
         return xlsx_file
     except TypeError as e:
         sys.stderr.write(str(e) + "\n")
