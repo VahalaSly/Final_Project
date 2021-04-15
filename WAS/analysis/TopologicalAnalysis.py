@@ -79,28 +79,35 @@ def get_statistics(branch, target_columns, hist_dataframe, new_dataframe):
     for column in target_columns:
         # for each column, we create one key for workflow-branch specific stats
         # and one key for overall stats for each task
-        overall_tasks_col_key = "overall_tasks_{}".format(column)
-        wk_specific_col_key = "branch_specific_{}".format(column)
+        overall_tasks_col_key = "overall_tasks: {}".format(column)
+        wk_specific_col_key = "branch_specific: {}".format(column)
         if overall_tasks_col_key not in path_statistics.keys():
             path_statistics[overall_tasks_col_key] = []
         if wk_specific_col_key not in path_statistics.keys():
             path_statistics[wk_specific_col_key] = []
 
-        wk_relevant_data_df = pd.DataFrame(columns=hist_dataframe.columns)
-        overall_relevant_data_df = pd.DataFrame(columns=hist_dataframe.columns)
+        wk_relevant_data = []
+        overall_relevant_data = []
         named_tasks = []
         for task in branch:
             # the workflow specific data needs to match both the workflow_name of the task and its ID
             workflow_name = new_dataframe.loc[task, 'workflow_name']
-            # TODO: These for some reason are returning false even when they should return true.
-            wk_relevant_data_df.append(hist_dataframe.loc[(hist_dataframe['id'] == str(task)) &
-                                                          (hist_dataframe['workflow_name'] ==
-                                                           str(workflow_name))])
+            wk_relevant_data.append(
+                (hist_dataframe.loc[
+                    (hist_dataframe['id'].astype('string') == str(task)) &
+                    (hist_dataframe['workflow_name'] == workflow_name)]
+                ).to_dict()
+            )
             # for the overall data, it just needs to match the name
             task_name = new_dataframe.loc[task, 'name']
             named_tasks.append(task_name)
-            overall_relevant_data_df.append(hist_dataframe.loc[hist_dataframe['name'] ==
-                                                               str(task_name)])
+            overall_relevant_data.append(
+                (hist_dataframe.loc[hist_dataframe['name'] == task_name]
+                ).to_dict()
+            )
+
+        wk_relevant_data_df = pd.DataFrame(wk_relevant_data)
+        overall_relevant_data_df = pd.DataFrame(overall_relevant_data)
 
         path_statistics['path'] = named_tasks
         path_statistics[overall_tasks_col_key].append(get_ratio_or_mean(overall_relevant_data_df, column))
