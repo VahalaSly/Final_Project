@@ -1,4 +1,4 @@
---historical_dir=csvs/user_3
+--user=user_3
 --task_features
 name
 id

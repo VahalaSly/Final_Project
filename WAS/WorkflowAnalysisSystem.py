@@ -15,8 +15,8 @@ def get_arguments():
     parser.add_argument("-f", "--file", dest="filepath",
                         help="KNIME workflow summary in JSON format", metavar="FILE PATH",
                         required=True)
-    parser.add_argument("-d", "--historical_dir", dest="hist_dir",
-                        help="Destination directory for storage of tasks historical execution data", metavar="DIR PATH",
+    parser.add_argument("-u", "--user", dest="user",
+                        help="The user calling the WAS", metavar="USERNAME",
                         required=True)
     parser.add_argument("-tf", "--task_features", dest="task_features",
                         help="Features of interest for tasks. If none, defaults to all.", metavar="FEATURE",
@@ -50,10 +50,7 @@ def add_latest_exec_to_historical_data(historical_data_path, historical_data, la
         print(e)
 
 
-def analyse(report_path,
-            json_file_path,
-            task_historical_data_path,
-            workflow_historical_data_path,
+def analyse(paths_map,
             task_features,
             workflow_features,
             task_rf_label_map,
@@ -65,7 +62,7 @@ def analyse(report_path,
         try:
 
             print("Initialising data pre-processing step...")
-            task_df, workflow_df = PI.json_to_dataframe(json_file_path)
+            task_df, workflow_df = PI.json_to_dataframe(paths_map['input_file'])
             # if the user has selected some specific features, then only use these for the ML analysis
             if len(task_features) > 0:
                 task_filtered_df = task_df[task_features].copy(deep=True)
@@ -83,6 +80,9 @@ def analyse(report_path,
             sys.stderr.write(str(e))
             raise e
 
+            # create the hist filepaths for both tasks and workflows
+        task_historical_data_path = "{}/tasks_historical_data.csv".format(paths_map['hist_dir'])
+        workflow_historical_data_path = "{}/workflow_historical_data.csv".format(paths_map['hist_dir'])
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
             tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
             workflow_historical_data = pd.read_csv(workflow_historical_data_path, low_memory=False)
@@ -136,7 +136,7 @@ def analyse(report_path,
                                            new_workflow_dataframe,
                                            branch_stats,
                                            task_stats,
-                                           report_path)
+                                           paths_map)
                 print("Feedback report step successful! \n")
                 print("Report file:///{} has been saved. \n".format(report.replace('\\', '/')))
                 print("Workflow Analysis Finished!")
@@ -161,19 +161,25 @@ def main():
 
     absolute_path = pathlib.Path(__file__).parent.absolute()
     json_file_path = "{}/{}".format(absolute_path, arguments.filepath)
-    historical_directory = arguments.hist_dir
+    user = arguments.user
+    user_dir = "{}/files/{}".format(absolute_path, user)
+    report_path = '{}/../reports/{}'.format(absolute_path, user)
+    historical_directory = "{}/csvs".format(user_dir)
+    figures_directory = "{}/report/figures".format(user_dir)
 
-    # each user can select its own directory to store the historical data
+    # each user gets its own directory to store the historical data, figures and report outputs
     # this checks whether the directory exists, and if it doesn't, creates it
     if not os.path.exists(historical_directory):
         os.makedirs(historical_directory)
+    if not os.path.exists(figures_directory):
+        os.makedirs(figures_directory)
+    if not os.path.exists(report_path):
+        os.makedirs(report_path)
 
-    # create the hist filepaths for both tasks and workflows
-    task_historical_data_path = "{}/{}/tasks_historical_data.csv".format(
-        absolute_path, historical_directory)
-    workflow_historical_data_path = "{}/{}/workflow_historical_data.csv".format(
-        absolute_path, historical_directory)
-    report_path = '{}/../reports'.format(absolute_path)
+    paths_map = {'input_file': json_file_path,
+                 'output_dir': report_path,
+                 'hist_dir': historical_directory,
+                 'figures_dir': figures_directory}
 
     # retrieve the rest of the command-line arguments
     task_features = arguments.task_features
@@ -189,10 +195,7 @@ def main():
 
     print("Welcome to the Workflow Analysis System!")
     print("Starting...")
-    analyse(report_path,
-            json_file_path,
-            task_historical_data_path,
-            workflow_historical_data_path,
+    analyse(paths_map,
             task_features,
             workflow_features,
             task_rf_label_map,

@@ -62,20 +62,20 @@ def add_figures_to_sheet(sheet, max_row, max_col, figures):
         col += 12
 
 
-def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, branch_stats, task_stats, report_path):
+def produce_report(task_features, workflow_features, task_dataset, workflow_dataset, branch_stats, task_stats, paths):
     task_figures = []
     workflow_figures = []
     # task graphs
     i = 0
     for label, features in task_features.items():
-        figure_name = "report/figures/task_{}.png".format(i)
+        figure_name = "{}/task_{}.png".format(paths['figures_dir'], i)
         make_graph(label, features, figure_name)
         task_figures.append(figure_name)
         i += 1
     # workflow graphs
     i = 0
     for label, features in workflow_features.items():
-        figure_name = "report/figures/workflow_{}.png".format(i)
+        figure_name = "{}/workflow_{}.png".format(paths['figures_dir'], i)
         make_graph(label, features, figure_name)
         workflow_figures.append(figure_name)
         i += 1
@@ -85,7 +85,7 @@ def produce_report(task_features, workflow_features, task_dataset, workflow_data
 
     timestamp = datetime.now()
     timestamp = timestamp.strftime("%d%m%y%H%M%S")
-    xlsx_file = "{}/execution_report_{}.xlsx".format(report_path, timestamp)
+    xlsx_file = "{}/execution_report_{}.xlsx".format(paths['output_dir'], timestamp)
 
     try:
         create_xlsx(workflow_figures, task_figures, workflow_dataset, task_dataset,

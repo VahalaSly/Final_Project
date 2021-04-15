@@ -1,4 +1,4 @@
---historical_dir=csvs/user_1
+--user=user_1
 --workflow_classifier=name
 --task_classifier=state
 --task_regressor=executionStatistics.executionDurationSinceStart
