@@ -62,20 +62,31 @@ def find_all_paths(graph, start, end, path=None):
     return paths
 
 
-def get_ratio_or_mean(df, column):
+def find_all_reachable_nodes(graph, node, reachable_nodes=None):
+    if reachable_nodes is None:
+        reachable_nodes = []
+    for successor in graph[node]:
+        if successor not in reachable_nodes and successor != node:
+            reachable_nodes.append(successor)
+            find_all_reachable_nodes(graph, successor, reachable_nodes)
+    # return set to avoid repetition of nodes
+    return set(reachable_nodes)
+
+
+def count_ratios_and_means(df, column):
     if df[column].dtype == 'object':
-        # get overall tasks ratios
         count = df[column].value_counts(normalize=True)
-        return ["{}, ratio: {} | ".format(value, ratio) for value, ratio in count.items()]
+        return ["{}, ratio: {} | ".format(value, ratio) for
+                value, ratio in count.items()]
     else:
         return df[column].mean()
 
 
-def get_statistics(branch, target_columns, hist_dataframe, new_dataframe):
+def get_statistics(branch, target_columns, hist_df, new_df):
     path_statistics = {}
-    # assigning path key so it can be first in the dataframe
-    # just for aesthetic reasons
-    path_statistics['path'] = []
+    branch_names = ids_to_names(branch, new_df)
+    path_statistics['branch_ids'] = branch
+    path_statistics['branch_names'] = branch_names
     for column in target_columns:
         # for each column, we create one key for workflow-branch specific stats
         # and one key for overall stats for each task
@@ -86,33 +97,23 @@ def get_statistics(branch, target_columns, hist_dataframe, new_dataframe):
         if wk_specific_col_key not in path_statistics.keys():
             path_statistics[wk_specific_col_key] = []
 
-        wk_relevant_data = []
-        overall_relevant_data = []
-        named_tasks = []
-        for task in branch:
-            # the workflow specific data needs to match both the workflow_name of the task and its ID
-            workflow_name = new_dataframe.loc[task, 'workflow_name']
-            wk_relevant_data.append(
-                (hist_dataframe.loc[
-                    (hist_dataframe['id'].astype('string') == str(task)) &
-                    (hist_dataframe['workflow_name'] == workflow_name)]
-                ).to_dict()
-            )
-            # for the overall data, it just needs to match the name
-            task_name = new_dataframe.loc[task, 'name']
-            named_tasks.append(task_name)
-            overall_relevant_data.append(
-                (hist_dataframe.loc[hist_dataframe['name'] == task_name]
-                ).to_dict()
-            )
+        workflows_names = set(new_df.loc[branch, 'workflow_name'])
+        # for workflow specific stats, we need to match both the ID and the workflow name
+        wk_specific_data = hist_df.loc[hist_df['id'].isin(branch) & hist_df['workflow_name'].isin(workflows_names)]
+        # for overall stats, we only need to match the name
+        relevant_overall_data = hist_df.loc[hist_df['name'].isin(branch_names)]
 
-        wk_relevant_data_df = pd.DataFrame(wk_relevant_data)
-        overall_relevant_data_df = pd.DataFrame(overall_relevant_data)
-
-        path_statistics['path'] = named_tasks
-        path_statistics[overall_tasks_col_key].append(get_ratio_or_mean(overall_relevant_data_df, column))
-        path_statistics[wk_specific_col_key].append(get_ratio_or_mean(wk_relevant_data_df, column))
+        # for both workflow specific stats and overall stats, save to dictionary
+        path_statistics[overall_tasks_col_key] = count_ratios_and_means(relevant_overall_data, column)
+        path_statistics[wk_specific_col_key] = count_ratios_and_means(wk_specific_data, column)
     return path_statistics
+
+
+def ids_to_names(path, dataframe):
+    named_tasks = []
+    for task in path:
+        named_tasks.append(str(dataframe.loc[task, 'name']))
+    return named_tasks
 
 
 def analyse(tsk_hist_data,
