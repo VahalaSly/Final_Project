@@ -26,8 +26,12 @@ The input JSON is iterated through each workflow and each node. If any of the no
 the key `subWorkflow`.
 
 If the nodes contain nested dictionaries, they will be flattened. This means that if a node value is given as:
-'"nodes": [ {"executionStatistics": {"executionDurationSinceStart": 811} } ], the value will be saved as:
-'executionStatistics.executionDurationSinceStart = 811'.
+
+`"nodes": [{"executionStatistics": {"executionDurationSinceStart": 811} } ]`
+
+the value will be saved as:
+
+`executionStatistics.executionDurationSinceStart = 811`.
 
 ### The command-line arguments
 
