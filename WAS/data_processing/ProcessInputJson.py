@@ -1,7 +1,6 @@
 import json
 from pandas import json_normalize
 import sys
-import numpy as np
 
 
 # taken from https://towardsdatascience.com/flattening-json-objects-in-python-f5343c794b10
