@@ -35,7 +35,8 @@ the value will be saved as:
 
 ### The command-line arguments
 
-The WAS expects and accepts a number of arguments when called:
+The WAS expects and accepts a number of arguments when called.
+
 `-f` or `--file` passing the file-path to the JSON input file. Required.
 
 `-u` or `--user` passing the username of the user executing the WAS. Required
