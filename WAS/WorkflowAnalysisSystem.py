@@ -5,7 +5,7 @@ import os
 import sys
 import data_processing.ProcessInputJson as PI
 import data_processing.FeedbackSuite as FS
-import analysis.RandomForest as RF
+import machine_learning.RandomForest as RF
 import analysis.AnalyseResults as AR
 import analysis.TopologicalAnalysis as TA
 
