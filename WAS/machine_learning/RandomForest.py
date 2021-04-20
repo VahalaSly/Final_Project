@@ -4,53 +4,38 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
+from machine_learning.classes.RF_Result import RFResult
+from machine_learning.classes.Label import Label
 
 
-def get_features_importance(rf, feature_names):
+def get_features_importance(rf, features):
     # get the list of features and their gini importance
     importance_list = list(rf.feature_importances_)
     # round the importance and tuple feature name with its importance value
     feature_importance = [(feature, round(importance, 2)) for feature, importance in
-                          zip(feature_names, importance_list)]
+                          zip(features, importance_list)]
     return feature_importance
 
 
-def random_forest(label_set, train_features, test_features, rf_instance, rf_type):
-    feature_names = list(test_features.columns)
-    rf_instance.fit(train_features, label_set['train_labels'])
+def random_forest(label, train_features, test_features, rf_instance):
+    train_values = label.train_values_array
+    test_values = label.test_values_array
+    rf_instance.fit(train_features, train_values)
     predictions = rf_instance.predict(test_features)
-    if rf_type == 'classifier':
-        c = list(np.array(predictions) == np.array(label_set['test_labels']))
-        mean_error = 1 - c.count(True)/len(c)
+    if label.rf_type == 'classifier':
+        matches = list(np.array(predictions) == test_values)
+        mean_error = 1 - matches.count(True) / len(matches)
     else:
-        errors = abs(predictions - label_set['test_labels'])
+        errors = abs(predictions - test_values)
         mean_error = np.mean(errors)
-    features_importance = get_features_importance(rf_instance, feature_names)
+    features_importance = get_features_importance(rf_instance, test_features.columns)
 
-    if label_set['encoder'] is not None:
-        predictions = label_set['encoder'].inverse_transform(predictions)
+    predictions = label.decode(predictions)
 
-    return {'predictions': predictions, 'error': round(mean_error, 2),
-            'features_importance': features_importance}
+    rf_result = RFResult(label_name=label.name, predictions=predictions,
+                         features_importance=features_importance, error=round(mean_error, 2))
 
-
-def get_label_set(rf_type, train_label_col, test_label_col):
-    le = None
-    if rf_type == 'classifier':
-        le = LabelEncoder()
-        label_values = list(train_label_col) + list(test_label_col)
-        le.fit(label_values)
-        train_label_col = le.transform(train_label_col)
-        test_label_col = le.transform(test_label_col)
-
-    try:
-        train_labels = np.array(train_label_col)
-        test_labels = np.array(test_label_col)
-
-        return {'test_labels': test_labels, 'train_labels': train_labels, 'encoder': le}
-    except KeyError as e:
-        sys.stderr.write(str(e) + "\n")
-        raise KeyError
+    return rf_result
 
 
 def predict(historical_data, new_data, rf_labels):
@@ -71,21 +56,27 @@ def predict(historical_data, new_data, rf_labels):
     hotenc_train_feat, hotenc_test_feat = hotenc_train_feat.align(hotenc_test_feat, join='inner', axis=1)
 
     # for each label, encode the label and run RF
-    for rf, labels in rf_labels.items():
-        results_dict[rf] = {}
-        for target_label in labels:
+    for rf_name, labels in rf_labels.items():
+        results_dict[rf_name] = []
+        for label_name in labels:
             try:
-                train_label = historical_data[target_label].fillna(-1)
-                test_label = new_data[target_label].fillna(-1)
-                label_set = get_label_set(rf, train_label,
-                                          test_label)
-                rf_instance = None
-                if rf == "classifier":
+                train_label_values = historical_data[label_name].fillna(-1)
+                test_label_values = new_data[label_name].fillna(-1)
+                if rf_name == "classifier":
+                    encoder = LabelEncoder()
                     rf_instance = RandomForestClassifier(n_estimators=128)
-                if rf == "regressor":
+                else:
+                    encoder = None
                     rf_instance = RandomForestRegressor(n_estimators=128)
-                results = random_forest(label_set, hotenc_train_feat, hotenc_test_feat, rf_instance, rf)
-                results_dict[rf][target_label] = results
+                label_instance = Label(name=label_name, rf_type=rf_name,
+                                       train_values=train_label_values,
+                                       test_values=test_label_values,
+                                       encoder=encoder)
+                results = random_forest(label_instance,
+                                        hotenc_train_feat,
+                                        hotenc_test_feat,
+                                        rf_instance)
+                results_dict[rf_name].append(results)
             except KeyError as e:
                 sys.stderr.write(str(e) + "\n")
                 raise KeyError

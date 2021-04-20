@@ -6,7 +6,7 @@ import sys
 import data_processing.ProcessInputJson as PI
 import data_processing.FeedbackSuite as FS
 import machine_learning.RandomForest as RF
-import analysis.AnalyseResults as AR
+import analysis.ProcessResults as PR
 import analysis.TopologicalAnalysis as TA
 
 
@@ -104,12 +104,10 @@ def analyse(paths_map,
             ### STEP 3 ##
             try:
                 print("Initialising results analysis step...")
-                new_task_dataframe, task_imp_features = AR.analyse(tasks_results,
-                                                                   task_filtered_df,
-                                                                   task_rf_label_map)
-                new_workflow_dataframe, workflow_imp_features = AR.analyse(workflow_results,
-                                                                           workflow_filtered_df,
-                                                                           workflow_rf_label_map)
+                new_task_dataframe, task_imp_features = PR.process(tasks_results,
+                                                                   task_filtered_df)
+                new_workflow_dataframe, workflow_imp_features = PR.process(workflow_results,
+                                                                           workflow_filtered_df)
                 print("Results analysis step successful! \n")
             except (KeyError, ValueError) as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")

@@ -25,7 +25,11 @@ def flatten_json(nested_json):
     return out
 
 
-def parse_workflow(environment, workflow, workflows_json, nodes_json):
+def parse_workflow(environment, workflow, workflows_json=None, nodes_json=None):
+    if workflows_json is None:
+        workflows_json = []
+    if nodes_json is None:
+        nodes_json = []
     if 'subWorkflow' in workflow.keys():
         workflow = workflow['subWorkflow']
     nodes_key = 'nodes'
@@ -48,13 +52,12 @@ def parse_workflow(environment, workflow, workflows_json, nodes_json):
         node_json = flatten_json(flatten_json(node))
         node_json.update({'workflow_name': workflow_name})
         nodes_json.append(node_json)
+    return workflows_json, nodes_json
 
 
 def json_to_dataframe(filepath):
     data = open(filepath).read()
     execution_summary = json.loads(data)
-    workflow_json = []
-    nodes_json = []
     environment = {}
     workflow_key = 'workflow'
     # we want to get all the execution information except the workflow information
@@ -65,7 +68,7 @@ def json_to_dataframe(filepath):
     environment = flatten_json(environment)
     try:
         workflow = execution_summary[workflow_key]
-        parse_workflow(environment, workflow, workflow_json, nodes_json)
+        workflow_json, nodes_json = parse_workflow(environment, workflow)
         workflows = json_normalize(workflow_json)
         nodes = json_normalize(nodes_json)
     except KeyError as e:

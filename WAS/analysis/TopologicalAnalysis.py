@@ -1,114 +1,52 @@
 import pandas as pd
-
-
-def create_graph(dataframe):
-    # the successors are divided among multiple columns
-    # this finds all of these columns (through regex search)
-    graph = {}
-    all_successors = dataframe.filter(regex='successors').filter(regex='id')
-    if len(all_successors.columns) != 0:
-        # puts all of the successors columns together and drops empty
-        all_successors = all_successors.T.apply(lambda x: x.dropna().tolist())
-        ids = list(dataframe['id'])
-        # goes through each task and its successors, and creates a graph in the form of {task:[successors]}
-        for i in range(0, len(ids)):
-            name = ids[i]
-            successors = all_successors[i]
-            if name in graph.keys():
-                graph[name] = list(set(graph[name]).union(set(successors)))
-            else:
-                graph[name] = successors
-    return graph
-
-
-def find_start_end_of_branches(graph):
-    start_nodes = []
-    end_nodes = []
-    is_successor_of_count = {}
-    has_successors_count = {}
-    for node, successors in graph.items():
-        has_successors_count[node] = len(successors)
-        if node not in is_successor_of_count.keys():
-            is_successor_of_count[node] = 0
-        for successor in successors:
-            if successor in is_successor_of_count:
-                is_successor_of_count[successor] += 1
-            else:
-                is_successor_of_count[successor] = 1
-    for successor, count in is_successor_of_count.items():
-        if count > 1:
-            end_nodes.append(successor)
-    for successor, count in has_successors_count.items():
-        if count > 1:
-            start_nodes.append(successor)
-    return start_nodes, end_nodes
-
-
-# https://www.python.org/doc/essays/graphs/
-def find_all_paths(graph, start, end, path=None):
-    if path is None:
-        path = []
-    path = path + [start]
-    if start == end:
-        return [path]
-    if start not in graph:
-        return []
-    paths = []
-    for node in graph[start]:
-        if node not in path:
-            newpaths = find_all_paths(graph, node, end, path)
-            for newpath in newpaths:
-                if newpath not in paths:
-                    paths.append(newpath)
-    return paths
-
-
-def find_all_reachable_nodes(graph, node, reachable_nodes=None):
-    if reachable_nodes is None:
-        reachable_nodes = []
-    for successor in graph[node]:
-        if successor not in reachable_nodes and successor != node:
-            reachable_nodes.append(successor)
-            find_all_reachable_nodes(graph, successor, reachable_nodes)
-    # return set to avoid repetition of nodes
-    return set(reachable_nodes)
+from analysis.util import Graph_operations as Go
 
 
 def count_ratios_and_means(df, column):
     if df[column].dtype == 'object':
         count = df[column].value_counts(normalize=True)
-        return ["{}, ratio: {} | ".format(value, ratio) for
+        return ["{}, ratio: {} | ".format(value, round(ratio, 2)) for
                 value, ratio in count.items()]
     else:
-        return df[column].mean()
+        return round(df[column].mean(), 2)
 
 
-def ids_to_names(path, dataframe):
+def ids_to_names(ids, dataframe):
     named_tasks = []
-    for task in path:
-        named_tasks.append(str(dataframe.loc[task, 'name']))
+    for task_id in ids:
+        named_tasks.append(str(dataframe.loc[task_id, 'name']))
     return named_tasks
 
 
-def get_branch_statistics(new_df, hist_df, imp_columns):
-    new_data_graph = create_graph(new_df)
-    # we set the id to index to facilitate task's id to name conversion
-    ided_tsks_new_exec = new_df.set_index('id', inplace=False, drop=True)
-    start_nodes, end_nodes = find_start_end_of_branches(new_data_graph)
-    # we get all the nodes that have been recognised as starting or ending a branch
-    # for each of the starting/ending pair, we find the paths...
-    current_workflow_branches = []
+def get_workflow_branches(df):
+    # the successors are divided among multiple columns
+    # this finds all of these columns (through regex search)
+    graph = {}
+    all_successors = df.filter(regex='successors').filter(regex='id')
+    if len(all_successors.columns) != 0:
+        # puts all of the successors columns together and drops empty
+        all_successors = all_successors.T.apply(lambda x: x.dropna().tolist())
+        ids = list(df['id'])
+        # goes through each task and its successors, and creates a graph in the form of {task:[successors]}
+        graph = Go.create_graph(ids, all_successors)
+    branches = []
+    start_nodes, end_nodes = Go.find_start_end_of_branches(graph)
     for start_node in start_nodes:
         for end_node in end_nodes:
-            # some start nodes of paths might also be end nodes of other paths.
-            # We do not want to look for paths between the same node.
             if start_node != end_node:
-                found_paths = find_all_paths(new_data_graph, start_node, end_node)
+                found_paths = Go.find_all_paths(graph, start_node, end_node)
                 # if there's more than one path (branch) between two nodes:
                 if len(found_paths) > 1:
-                    current_workflow_branches += found_paths
+                    branches += found_paths
+    return branches
+
+
+def get_branch_statistics(new_df, hist_df, imp_columns):
+    current_workflow_branches = get_workflow_branches(new_df)
     # once we have all the branches, we retrieve the labels and features information
     statistics = []
+    # we set the id to index to facilitate task's id to name conversion
+    ided_tsks_new_exec = new_df.set_index('id', inplace=False, drop=True)
     for branch in current_workflow_branches:
         path_statistics = {}
         branch_names = ids_to_names(branch, ided_tsks_new_exec)
@@ -125,10 +63,10 @@ def get_branch_statistics(new_df, hist_df, imp_columns):
             path_statistics[branch_statistics_key] = count_ratios_and_means(branch_hist_data, column)
         statistics.append(path_statistics)
     # store the paths statistics results into new dataframe
-    return pd.DataFrame(statistics)
+    return statistics
 
 
-def get_tasks_statistics(hist_df, new_df, imp_columns):
+def get_tasks_statistics(new_df, hist_df, imp_columns):
     all_tasks = new_df['name'].unique()
     statistics = []
     for task in all_tasks:
@@ -140,7 +78,7 @@ def get_tasks_statistics(hist_df, new_df, imp_columns):
             task_statistics[task_statistics_key] = count_ratios_and_means(task_relevant_data, column)
 
         statistics.append(task_statistics)
-    return pd.DataFrame(statistics)
+    return statistics
 
 
 def analyse(tsk_hist_data,
@@ -163,6 +101,6 @@ def analyse(tsk_hist_data,
     imp_columns = set(imp_columns)
 
     branch_stats = get_branch_statistics(tsk_new_exec, tsk_hist_data, imp_columns)
-    tasks_stats = get_tasks_statistics(tsk_hist_data, tsk_new_exec, imp_columns)
+    tasks_stats = get_tasks_statistics(tsk_new_exec, tsk_hist_data, imp_columns)
 
-    return branch_stats, tasks_stats
+    return pd.DataFrame(branch_stats), pd.DataFrame(tasks_stats)

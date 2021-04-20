@@ -115,3 +115,12 @@ Jinja2:
 `pip install Jinja2`
 
 Python 3.6 or newer must also be installed.
+
+### The tests
+To run the tests available in the tests dir you need to install pytest using:
+
+`pip install pytest`
+
+Then, from the main WAS dir, run:
+
+`python -m pytest`
