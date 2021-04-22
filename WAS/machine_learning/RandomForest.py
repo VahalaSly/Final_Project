@@ -24,7 +24,7 @@ def random_forest(label, train_features, test_features, rf_instance):
     predictions = rf_instance.predict(test_features)
     if label.rf_type == 'classifier':
         matches = list(np.array(predictions) == test_values)
-        mean_error = 1 - matches.count(True) / len(matches)
+        mean_error = matches.count(False) / len(matches)
     else:
         errors = abs(predictions - test_values)
         mean_error = np.mean(errors)

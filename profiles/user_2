@@ -3,13 +3,11 @@
 name
 id
 type
-state
 graphDepth
 factoryKey.className
 executionStatistics.lastExecutionStartTime
 executionStatistics.executionCountSinceReset
 executionStatistics.executionCountSinceStart
-executionStatistics.executionDurationSinceStart
 workflow_name
 --workflow_classifier=name
 --task_classifier=state

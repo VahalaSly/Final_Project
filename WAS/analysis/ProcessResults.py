@@ -16,7 +16,7 @@ def get_valid_prediction_features(is_error_low, features):
     imp_features = []
     if is_error_low:
         for feature, importance in features:
-            if importance > 0.1:
+            if importance > 0.05:
                 imp_features.append((feature, importance))
     return imp_features
 

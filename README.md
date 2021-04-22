@@ -54,12 +54,12 @@ categorical values. The labels must exists in the JSON file. Optional.
 numerical values. The labels must exists in the JSON file. Optional.
 
 `-tf` or `--task_features` passing names of keys (remember to account for the flattening of the input) which are to be
-considered by the machine learning when attempting to predict the task labels. If none are given, then all keys given by
-the JSON file are used. The labels also need to be included. Optional.
+considered as features by the machine learning when attempting to predict the task labels. If none are given, then all keys given by
+the JSON file are used. Optional.
 
 `-wf` or `--workflow_features` passing names of keys (remember to account for the flattening of the input) which are to
-be considered by the machine learning when attempting to predict the workflow labels. If none are given, then all keys
-given by the JSON file are used. The labels also need to be included. Optional.
+be considered as features by the machine learning when attempting to predict the workflow labels. If none are given, then all keys
+given by the JSON file are used. Optional.
 
 ### The profiles
 
@@ -108,11 +108,11 @@ matplotlib:
 scikit-learn:
 `pip install scikit-learn`
 
-numpy:
-`pip install numpy`
-
 Jinja2:
 `pip install Jinja2`
+
+xlsxwriter:
+`pip install xlsxwriter`
 
 Python 3.6 or newer must also be installed.
 

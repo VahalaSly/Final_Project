@@ -63,16 +63,6 @@ def analyse(paths_map,
 
             print("Initialising data pre-processing step...")
             task_df, workflow_df = PI.json_to_dataframe(paths_map['input_file'])
-            # if the user has selected some specific features, then only use these for the ML analysis
-            if len(task_features) > 0:
-                task_filtered_df = task_df[task_features].copy(deep=True)
-            else:
-                task_filtered_df = task_df.copy(deep=True)
-
-            if len(workflow_features) > 0:
-                workflow_filtered_df = workflow_df[workflow_features].copy(deep=True)
-            else:
-                workflow_filtered_df = workflow_df.copy(deep=True)
             print("Data pre-processing step successful! \n")
 
         except (KeyError, ValueError) as e:
@@ -80,14 +70,42 @@ def analyse(paths_map,
             sys.stderr.write(str(e))
             raise e
 
-            # create the hist filepaths for both tasks and workflows
+        # create the hist filepaths for both tasks and workflows
         task_historical_data_path = "{}/tasks_historical_data.csv".format(paths_map['hist_dir'])
         workflow_historical_data_path = "{}/workflow_historical_data.csv".format(paths_map['hist_dir'])
         if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
             tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
             workflow_historical_data = pd.read_csv(workflow_historical_data_path, low_memory=False)
 
-            ### STEP 2 ###
+            ## STEP 2 ##
+            # if the user has selected some specific features, then only use these for the ML analysis
+            # first we combine them with the labels to get all the user-defined columns:
+            task_labels = list(set().union(*task_rf_label_map.values()))
+            task_imp_columns = list(set(task_features + task_labels))
+            workflow_labels = list(set().union(*workflow_rf_label_map.values()))
+            workflow_imp_columns = list(set(workflow_features + workflow_labels))
+            # since the historical data might not have the features...
+            # ...we use the & operator to only get the feature column if it exists
+            try:
+                if len(task_features) > 0:
+                    task_filtered_df = task_df[task_imp_columns].copy(deep=True)
+                    tasks_historical_data = tasks_historical_data[tasks_historical_data.columns &
+                                                                  task_imp_columns]
+                else:
+                    task_filtered_df = task_df.copy(deep=True)
+
+                if len(workflow_features) > 0:
+                    workflow_filtered_df = workflow_df[workflow_imp_columns].copy(deep=True)
+                    workflow_historical_data = workflow_historical_data[workflow_historical_data.columns &
+                                                                        workflow_imp_columns]
+                else:
+                    workflow_filtered_df = workflow_df.copy(deep=True)
+            except KeyError as e:
+                sys.stderr.write("Failed to match requested features with input data columns. "
+                                 "Make sure the desired features exist in the input data. \n")
+                raise e
+
+            ### STEP 3 ###
             try:
                 print("Initialising Random Forest step...")
                 tasks_results = RF.predict(tasks_historical_data,
@@ -101,7 +119,7 @@ def analyse(paths_map,
                 sys.stderr.write("Random Forest step unsuccessful :( \n")
                 raise e
 
-            ### STEP 3 ##
+            ### STEP 4 ##
             try:
                 print("Initialising results analysis step...")
                 new_task_dataframe, task_imp_features = PR.process(tasks_results,
@@ -113,7 +131,7 @@ def analyse(paths_map,
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
                 raise e
 
-            ### STEP 4 ##
+            ### STEP 5 ##
             try:
                 print("Initialising topological analysis step...")
                 branch_stats, task_stats = TA.analyse(tasks_historical_data,
@@ -125,7 +143,7 @@ def analyse(paths_map,
                 sys.stderr.write("Topological analysis step unsuccessful :( \n")
                 raise e
 
-            ## STEP 5 ##
+            ## STEP 6 ##
             try:
                 print("Initialising feedback report step...")
                 report = FS.produce_report(task_imp_features,
@@ -141,11 +159,16 @@ def analyse(paths_map,
             except (KeyError, ValueError) as e:
                 sys.stderr.write("Results analysis step unsuccessful :( \n")
                 raise e
+
+            #TODO: Decide whether to keep this or not. Do we want to save all data?
+            # we only want to save the user-given features and labels
+            task_df = task_filtered_df
+            workflow_df = workflow_filtered_df
         else:
             print("No historical data available.")
         print("Saving new workflow execution data to historical data...")
 
-        ### STEP 6 ###
+        ### STEP 7 ###
         add_latest_exec_to_historical_data(task_historical_data_path,
                                            tasks_historical_data, task_df)
         add_latest_exec_to_historical_data(workflow_historical_data_path,
@@ -180,8 +203,8 @@ def main():
                  'figures_dir': figures_directory}
 
     # retrieve the rest of the command-line arguments
-    task_features = arguments.task_features
-    workflow_features = arguments.workflow_features
+    task_features = [arg for arg in arguments.task_features]
+    workflow_features = [arg for arg in arguments.workflow_features]
 
     task_rf_label_map = {'classifier': [], 'regressor': []}
     workflow_rf_label_map = {'classifier': [], 'regressor': []}
