@@ -43,7 +43,8 @@ def parse_workflow(environment, workflow, workflows_json=None, nodes_json=None):
     flattened_workflow = flatten_json(workflow)
     # all workflows share the same environment information
     # so we append that info to each workflow
-    flattened_workflow.update(environment)
+    if len(environment) > 0:
+        flattened_workflow.update(environment)
     workflows_json.append(flattened_workflow)
     for node in nodes:
         if 'subWorkflow' in node.keys():

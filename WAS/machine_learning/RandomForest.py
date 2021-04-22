@@ -18,8 +18,9 @@ def get_features_importance(rf, features):
 
 
 def random_forest(label, train_features, test_features, rf_instance):
-    train_values = label.train_values_array
-    test_values = label.test_values_array
+    train_values, test_values = label.encoded_train_test()
+    train_values = np.array(train_values)
+    test_values = np.array(test_values)
     rf_instance.fit(train_features, train_values)
     predictions = rf_instance.predict(test_features)
     if label.rf_type == 'classifier':
@@ -41,13 +42,17 @@ def random_forest(label, train_features, test_features, rf_instance):
 def predict(historical_data, new_data, rf_labels):
     results_dict = {}
 
-    # drop the labels from features data
+    # drop the labels from features testing data
     all_labels = list(set().union(*rf_labels.values()))
-    train_features = historical_data.drop(all_labels, axis=1)
-    test_features = new_data.drop(all_labels, axis=1)
+    try:
+        test_features = new_data.drop(all_labels, axis=1)
+    except KeyError:
+        sys.stderr.write("One of the labels provided does not exist in the testing dataset. "
+                         "Please check the input json file and try again. \n")
+        return results_dict
 
     # hot encode the categorical features and fill empty cells with -1, representing the lack of data
-    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(train_features).fillna(-1),
+    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(-1),
                                        prefix_sep="!-->")
     hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(-1),
                                       prefix_sep="!-->")
@@ -55,18 +60,24 @@ def predict(historical_data, new_data, rf_labels):
     # inner join to match the shape between the two dataframes
     hotenc_train_feat, hotenc_test_feat = hotenc_train_feat.align(hotenc_test_feat, join='inner', axis=1)
 
+    if hotenc_train_feat.empty or hotenc_test_feat.empty:
+        sys.stderr.write("The dataframe couldn't provide any feature. The labels cannot be inferred. \n")
+        return results_dict
+
     # for each label, encode the label and run RF
     for rf_name, labels in rf_labels.items():
         results_dict[rf_name] = []
         for label_name in labels:
             try:
-                train_label_values = historical_data[label_name].fillna(-1)
-                test_label_values = new_data[label_name].fillna(-1)
                 if rf_name == "classifier":
                     encoder = LabelEncoder()
+                    train_label_values = historical_data[label_name].fillna('None')
+                    test_label_values = new_data[label_name].fillna('None')
                     rf_instance = RandomForestClassifier(n_estimators=128)
                 else:
                     encoder = None
+                    train_label_values = historical_data[label_name].fillna(-1)
+                    test_label_values = new_data[label_name].fillna(-1)
                     rf_instance = RandomForestRegressor(n_estimators=128)
                 label_instance = Label(name=label_name, rf_type=rf_name,
                                        train_values=train_label_values,

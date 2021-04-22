@@ -55,7 +55,8 @@ def get_branch_statistics(new_df, hist_df, imp_columns):
 
         # for branch specific stats, we need to match both the ID and the workflow name
         workflows_names = set(ided_tsks_new_exec.loc[branch, 'workflow_name'])
-        branch_hist_data = hist_df.loc[hist_df['id'].isin(branch) & hist_df['workflow_name'].isin(workflows_names)]
+        branch_hist_data = hist_df.loc[hist_df['workflow_name'].isin(workflows_names) &
+                                       hist_df['id'].astype(str).isin(branch)]
 
         for column in imp_columns:
             branch_statistics_key = "branch_statistics: {}".format(column)

@@ -6,9 +6,9 @@ from analysis.TopologicalAnalysis import get_tasks_statistics
 from analysis.TopologicalAnalysis import get_workflow_branches
 
 sample_dataframe = pandas.DataFrame({
-    'id': ['0', '1', '2', '3', 4],
+    'id': ['0', '1', '2', '3', '4'],
     'name': ['name0', 'name1', 'name2', 'name3', 'name3'],
-    'successors_0_id': ['1', 4, '3', 4, np.NAN],
+    'successors_0_id': ['1', '4', '3', '4', np.NAN],
     'successors_1_id': ['2', np.NAN, np.NAN, np.NAN, np.NAN],
     'workflow_name': ['workflow1', 'workflow1', 'workflow1', 'workflow1', 'workflow1'],
     'state': ['executed', 'executed', 'executed', 'failed', 'failed'],
@@ -16,7 +16,7 @@ sample_dataframe = pandas.DataFrame({
 })
 
 sample_larger_dataframe = pandas.DataFrame({
-    'id': ['1', '1', '3', 4, 4, 4, 4],
+    'id': ['1', '1', '3', '4', '4', '4', '4'],
     'name': ['name1', 'name2', 'name3', 'name3', 'name3', 'name3', 'name3'],
     'workflow_name': ['workflow1', 'workflow2', 'workflow1', 'workflow1', 'workflow1', 'workflow2', 'workflow1'],
     'state': ['failed', 'executed', 'failed', 'failed', 'failed', 'executed', 'executed'],
@@ -31,19 +31,19 @@ def test_count_ratios_and_means():
 
 
 def test_get_workflow_branches():
-    assert get_workflow_branches(sample_dataframe) == [['0', '1', 4], ['0', '2', '3', 4]]
+    assert get_workflow_branches(sample_dataframe) == [['0', '1', '4'], ['0', '2', '3', '4']]
     assert get_workflow_branches(sample_larger_dataframe) == []
 
 
 def test_get_branch_statistics():
     # calculated ratios and means manually
     assert get_branch_statistics(sample_dataframe, sample_larger_dataframe, ['state', 'duration']) == [
-        {'branch_ids': ['0', '1', 4],
+        {'branch_ids': ['0', '1', '4'],
          'branch_names': ['name0', 'name1', 'name3'],
          'branch_statistics: duration': 2.0,
          'branch_statistics: state': ['failed, ratio: 0.75 | ',
                                       'executed, ratio: 0.25 | ']},
-        {'branch_ids': ['0', '2', '3', 4],
+        {'branch_ids': ['0', '2', '3', '4'],
          'branch_names': ['name0', 'name2', 'name3', 'name3'],
          'branch_statistics: duration': 1.75,
          'branch_statistics: state': ['failed, ratio: 0.75 | ',

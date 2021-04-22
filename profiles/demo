@@ -1,0 +1,4 @@
+--user=demo
+--file=../json_files/demo.json
+--workflow_classifier=state
+--task_classifier=state

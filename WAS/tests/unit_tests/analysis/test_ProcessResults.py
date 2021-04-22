@@ -16,6 +16,6 @@ def test_is_error_under_threshold():
 
 
 def test_get_valid_prediction_features():
-    feature_importance_pairs = [('A', 0.2), ('B', 0.09), ('C', 0), ('D', 0.7)]
-    assert get_valid_prediction_features(True, feature_importance_pairs) == [('A', 0.2), ('D', 0.7)]
+    feature_importance_pairs = [('A', 0.02), ('B', 0.1), ('C', 0), ('D', 0.7)]
+    assert get_valid_prediction_features(True, feature_importance_pairs) == [('B', 0.1), ('D', 0.7)]
     assert get_valid_prediction_features(False, feature_importance_pairs) == []

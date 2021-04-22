@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class Label:
     """ Class Label represents an instance of Label for Random Forest training and testing """
 
@@ -13,23 +10,17 @@ class Label:
 
     @property
     def all_values(self):
-        return list(self.train_values) + list(self.test_values)
+        all_values = list(self.train_values) + list(self.test_values)
+        return all_values
 
-    @property
-    def train_values_array(self):
-        encoded_values = self.encode(self.train_values)
-        return np.array(encoded_values)
-
-    @property
-    def test_values_array(self):
-        encoded_values = self.encode(self.test_values)
-        return np.array(encoded_values)
-
-    def encode(self, values):
+    def encoded_train_test(self):
+        train = self.train_values
+        test = self.test_values
         if self.encoder is not None:
             self.encoder.fit(self.all_values)
-            values = self.encoder.transform(values)
-        return values
+            train = self.encoder.transform(self.train_values)
+            test = self.encoder.transform(self.test_values)
+        return train, test
 
     def decode(self, values):
         if self.encoder is not None:
