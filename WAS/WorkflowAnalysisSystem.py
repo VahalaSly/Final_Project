@@ -84,32 +84,36 @@ def analyse(paths_map,
         try:
             if len(task_features) > 0:
                 task_filtered_df = task_df[task_imp_columns].copy(deep=True)
-                tasks_historical_data = tasks_historical_data[
-                    tasks_historical_data.columns.intersection(task_imp_columns)]
+                task_filtered_hist_df = tasks_historical_data[
+                    tasks_historical_data.columns.intersection(task_imp_columns)].copy(deep=True)
             else:
                 task_filtered_df = task_df.copy(deep=True)
+                task_filtered_hist_df = tasks_historical_data
             if len(workflow_features) > 0:
                 workflow_filtered_df = workflow_df[workflow_imp_columns].copy(deep=True)
-                workflow_historical_data = workflow_historical_data[
-                    workflow_historical_data.columns.intersection(workflow_imp_columns)]
+                workflow_filtered_hist_df = workflow_historical_data[
+                    workflow_historical_data.columns.intersection(workflow_imp_columns)].copy(deep=True)
             else:
                 workflow_filtered_df = workflow_df.copy(deep=True)
+                workflow_filtered_hist_df = workflow_historical_data
         except KeyError as e:
             sys.stderr.write("Failed to match requested features with input data columns. "
                              "Make sure the desired features exist in the input data. \n")
+            sys.stderr.write(str(e))
             return e
         ### STEP 3 ###
         try:
             print("Initialising Random Forest step...")
-            tasks_results = RF.predict(tasks_historical_data,
+            tasks_results = RF.predict(task_filtered_hist_df,
                                        task_filtered_df,
                                        task_rf_label_map)
-            workflow_results = RF.predict(workflow_historical_data,
+            workflow_results = RF.predict(workflow_filtered_hist_df,
                                           workflow_filtered_df,
                                           workflow_rf_label_map)
             print("Random Forest step successful! \n")
         except (KeyError, ValueError) as e:
             sys.stderr.write("Random Forest step unsuccessful :( \n")
+            sys.stderr.write(str(e))
             return e
         ### STEP 4 ##
         try:
@@ -121,6 +125,7 @@ def analyse(paths_map,
             print("Results analysis step successful! \n")
         except (KeyError, ValueError) as e:
             sys.stderr.write("Results analysis step unsuccessful :( \n")
+            sys.stderr.write(str(e))
             return e
         ### STEP 5 ##
         try:
@@ -132,6 +137,7 @@ def analyse(paths_map,
             print("Topological analysis step successful! \n")
         except (KeyError, ValueError) as e:
             sys.stderr.write("Topological analysis step unsuccessful :( \n")
+            sys.stderr.write(str(e))
             return e
         ## STEP 6 ##
         try:
@@ -148,6 +154,7 @@ def analyse(paths_map,
             print("Workflow Analysis Finished!")
         except (KeyError, ValueError) as e:
             sys.stderr.write("Results analysis step unsuccessful :( \n")
+            sys.stderr.write(str(e))
             return e
     else:
         print("No historical data available.")

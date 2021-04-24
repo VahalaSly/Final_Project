@@ -57,7 +57,7 @@ def parse_workflow(environment, workflow, workflows_json=None, nodes_json=None):
 
 
 def json_to_dataframe(filepath):
-    data = open(filepath).read()
+    data = open(filepath, encoding="utf8").read()
     execution_summary = json.loads(data)
     environment = {}
     workflow_key = 'workflow'

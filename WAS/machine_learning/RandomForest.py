@@ -69,10 +69,12 @@ def predict(historical_data, new_data, rf_labels):
         results_dict[rf_name] = []
         for label_name in labels:
             try:
+                if label_name not in historical_data.columns:
+                    historical_data[label_name] = np.NAN
                 if rf_name == "classifier":
                     encoder = LabelEncoder()
-                    train_label_values = historical_data[label_name].fillna('None')
-                    test_label_values = new_data[label_name].fillna('None')
+                    train_label_values = historical_data[label_name].astype(str).fillna('None')
+                    test_label_values = new_data[label_name].astype(str).fillna('None')
                     rf_instance = RandomForestClassifier(n_estimators=128)
                 else:
                     encoder = None
