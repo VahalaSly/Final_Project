@@ -52,9 +52,9 @@ def predict(historical_data, new_data, rf_labels):
         return results_dict
 
     # hot encode the categorical features and fill empty cells with -1, representing the lack of data
-    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(-1),
+    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(0),
                                        prefix_sep="!-->")
-    hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(-1),
+    hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(0),
                                       prefix_sep="!-->")
 
     # inner join to match the shape between the two dataframes
@@ -78,8 +78,8 @@ def predict(historical_data, new_data, rf_labels):
                     rf_instance = RandomForestClassifier(n_estimators=128)
                 else:
                     encoder = None
-                    train_label_values = historical_data[label_name].fillna(-1)
-                    test_label_values = new_data[label_name].fillna(-1)
+                    train_label_values = historical_data[label_name].fillna(0)
+                    test_label_values = new_data[label_name].fillna(0)
                     rf_instance = RandomForestRegressor(n_estimators=128)
                 label_instance = Label(name=label_name, rf_type=rf_name,
                                        train_values=train_label_values,
