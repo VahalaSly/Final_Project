@@ -39,15 +39,38 @@ def get_arguments():
     return parser.parse_args()
 
 
-def add_latest_exec_to_historical_data(historical_data_path, historical_data, latest_execution):
+def add_latest_exec_to_historical_df(historical_data, latest_execution):
     try:
         if historical_data is not None:
             # pd.concat creates a union of the two dataframes, adding any new column
             latest_execution = pd.concat([historical_data, latest_execution], ignore_index=True, sort=False)
-        latest_execution.to_csv(historical_data_path, index=False)
+        return latest_execution
     except ValueError as e:
         print("Encountered error while trying to save new data to historical data.")
         print(e)
+
+
+def get_filtered_dfs(features_list, labels_map, new_dataframe, hist_dataframe):
+    # if the user has selected some specific features, then only use these for the ML analysis
+    # first we combine them with the labels to get all the user-defined columns:
+    labels = list(set().union(*labels_map.values()))
+    imp_columns = list(set(features_list + labels))
+    # since the historical data might not have the features...
+    # ...we use the & operator to only get the feature column if it exists
+    try:
+        if len(features_list) > 0:
+            filtered_df = new_dataframe[imp_columns].copy(deep=True)
+            filtered_hist_df = hist_dataframe[
+                hist_dataframe.columns.intersection(imp_columns)].copy(deep=True)
+        else:
+            filtered_df = new_dataframe.copy(deep=True)
+            filtered_hist_df = hist_dataframe
+        return filtered_df, filtered_hist_df
+    except KeyError as e:
+        sys.stderr.write("Failed to match requested features with input data columns. "
+                         "Make sure the desired features exist in the input data. \n")
+        sys.stderr.write(str(e))
+        sys.exit()
 
 
 def analyse(paths_map,
@@ -55,52 +78,29 @@ def analyse(paths_map,
             workflow_features,
             task_rf_label_map,
             workflow_rf_label_map):
-    tasks_historical_data = None
-    workflow_historical_data = None
+    tasks_hist_df = None
+    workflow_hist_df = None
     ## STEP 1 ##
     try:
         print("Initialising data pre-processing step...")
-        task_df, workflow_df = PI.json_to_dataframe(paths_map['input_file'])
+        workflow_df, task_df = PI.get_nodes_and_workflows(paths_map['input_file'])
         print("Data pre-processing step successful! \n")
     except (KeyError, ValueError) as e:
         sys.stderr.write("Data pre-processing step unsuccessful :( \n")
         sys.stderr.write(str(e))
-        raise e
+        sys.exit()
     # create the hist filepaths for both tasks and workflows
-    task_historical_data_path = "{}/tasks_historical_data.csv".format(paths_map['hist_dir'])
-    workflow_historical_data_path = "{}/workflow_historical_data.csv".format(paths_map['hist_dir'])
-    if os.path.isfile(task_historical_data_path) and os.path.isfile(workflow_historical_data_path):
-        tasks_historical_data = pd.read_csv(task_historical_data_path, low_memory=False)
-        workflow_historical_data = pd.read_csv(workflow_historical_data_path, low_memory=False)
+    task_hist_data_path = "{}/tasks_historical_data.csv".format(paths_map['hist_dir'])
+    workflow_hist_data_path = "{}/workflow_historical_data.csv".format(paths_map['hist_dir'])
+    if os.path.isfile(task_hist_data_path) and os.path.isfile(workflow_hist_data_path):
+        tasks_hist_df = pd.read_csv(task_hist_data_path, low_memory=False)
+        workflow_hist_df = pd.read_csv(workflow_hist_data_path, low_memory=False)
+
         ## STEP 2 ##
-        # if the user has selected some specific features, then only use these for the ML analysis
-        # first we combine them with the labels to get all the user-defined columns:
-        task_labels = list(set().union(*task_rf_label_map.values()))
-        task_imp_columns = list(set(task_features + task_labels))
-        workflow_labels = list(set().union(*workflow_rf_label_map.values()))
-        workflow_imp_columns = list(set(workflow_features + workflow_labels))
-        # since the historical data might not have the features...
-        # ...we use the & operator to only get the feature column if it exists
-        try:
-            if len(task_features) > 0:
-                task_filtered_df = task_df[task_imp_columns].copy(deep=True)
-                task_filtered_hist_df = tasks_historical_data[
-                    tasks_historical_data.columns.intersection(task_imp_columns)].copy(deep=True)
-            else:
-                task_filtered_df = task_df.copy(deep=True)
-                task_filtered_hist_df = tasks_historical_data
-            if len(workflow_features) > 0:
-                workflow_filtered_df = workflow_df[workflow_imp_columns].copy(deep=True)
-                workflow_filtered_hist_df = workflow_historical_data[
-                    workflow_historical_data.columns.intersection(workflow_imp_columns)].copy(deep=True)
-            else:
-                workflow_filtered_df = workflow_df.copy(deep=True)
-                workflow_filtered_hist_df = workflow_historical_data
-        except KeyError as e:
-            sys.stderr.write("Failed to match requested features with input data columns. "
-                             "Make sure the desired features exist in the input data. \n")
-            sys.stderr.write(str(e))
-            return e
+        task_filtered_df, task_filtered_hist_df = get_filtered_dfs(task_features, task_rf_label_map,
+                                                                   task_df, tasks_hist_df)
+        workflow_filtered_df, workflow_filtered_hist_df = get_filtered_dfs(workflow_features, workflow_rf_label_map,
+                                                                           workflow_df, workflow_hist_df)
         ### STEP 3 ###
         try:
             print("Initialising Random Forest step...")
@@ -114,7 +114,7 @@ def analyse(paths_map,
         except (KeyError, ValueError) as e:
             sys.stderr.write("Random Forest step unsuccessful :( \n")
             sys.stderr.write(str(e))
-            return e
+            sys.exit()
         ### STEP 4 ##
         try:
             print("Initialising results analysis step...")
@@ -126,11 +126,11 @@ def analyse(paths_map,
         except (KeyError, ValueError) as e:
             sys.stderr.write("Results analysis step unsuccessful :( \n")
             sys.stderr.write(str(e))
-            return e
+            sys.exit()
         ### STEP 5 ##
         try:
             print("Initialising topological analysis step...")
-            branch_stats, task_stats = TA.analyse(tasks_historical_data,
+            branch_stats, task_stats = TA.analyse(tasks_hist_df,
                                                   task_df,
                                                   task_imp_features,
                                                   task_rf_label_map)
@@ -138,7 +138,7 @@ def analyse(paths_map,
         except (KeyError, ValueError) as e:
             sys.stderr.write("Topological analysis step unsuccessful :( \n")
             sys.stderr.write(str(e))
-            return e
+            sys.exit()
         ## STEP 6 ##
         try:
             print("Initialising feedback report step...")
@@ -155,15 +155,15 @@ def analyse(paths_map,
         except (KeyError, ValueError) as e:
             sys.stderr.write("Results analysis step unsuccessful :( \n")
             sys.stderr.write(str(e))
-            return e
+            sys.exit()
     else:
         print("No historical data available.")
     print("Saving new workflow execution data to historical data...")
     ### STEP 7 ###
-    add_latest_exec_to_historical_data(task_historical_data_path,
-                                       tasks_historical_data, task_df)
-    add_latest_exec_to_historical_data(workflow_historical_data_path,
-                                       workflow_historical_data, workflow_df)
+    new_task_hist_df = add_latest_exec_to_historical_df(tasks_hist_df, task_df)
+    new_workflow_hist_df = add_latest_exec_to_historical_df(workflow_hist_df, workflow_df)
+    new_task_hist_df.to_csv(task_hist_data_path, index=False)
+    new_workflow_hist_df.to_csv(workflow_hist_data_path, index=False)
 
 
 def main():

@@ -26,49 +26,57 @@ def flatten_json(nested_json):
 
 
 def parse_workflow(environment, workflow, workflows_json=None, nodes_json=None):
+    nodes_key = 'nodes'
+    name_key = 'name'
+    subworkflow_key = 'subWorkflow'
+    nodes = []
+    workflow_name = 'UnKnown'
     if workflows_json is None:
         workflows_json = []
     if nodes_json is None:
         nodes_json = []
-    if 'subWorkflow' in workflow.keys():
-        workflow = workflow['subWorkflow']
-    nodes_key = 'nodes'
-    name_key = 'name'
-    try:
+    # check if subworkflow
+    if subworkflow_key in workflow.keys():
+        workflow = workflow[subworkflow_key]
+    # look for nodes
+    if nodes_key in workflow.keys():
         nodes = workflow[nodes_key]
+        # we copy to avoid mutating the original dictionary
+        workflow = workflow.copy()
+        workflow.pop(nodes_key)
+    # check if subworkflow has a name
+    if name_key in workflow.keys():
         workflow_name = workflow[name_key]
-    except KeyError:
-        raise KeyError
-    workflow.pop(nodes_key)
-    flattened_workflow = flatten_json(workflow)
+
     # all workflows share the same environment information
     # so we append that info to each workflow
+    flattened_workflow = flatten_json(workflow)
     if len(environment) > 0:
         flattened_workflow.update(environment)
     workflows_json.append(flattened_workflow)
     for node in nodes:
-        if 'subWorkflow' in node.keys():
+        if subworkflow_key in node.keys():
             parse_workflow(environment, node, workflows_json, nodes_json)
-            node.pop('subWorkflow')
+            node = node.copy()
+            node.pop(subworkflow_key)
         node_json = flatten_json(flatten_json(node))
         node_json.update({'workflow_name': workflow_name})
         nodes_json.append(node_json)
+    print()
     return workflows_json, nodes_json
 
 
-def json_to_dataframe(filepath):
-    data = open(filepath, encoding="utf8").read()
-    execution_summary = json.loads(data)
+def json_to_dataframe(summary):
     environment = {}
     workflow_key = 'workflow'
     # we want to get all the execution information except the workflow information
     # which is stored in its own variable
-    for key, value in execution_summary.items():
+    for key, value in summary.items():
         if key != workflow_key:
             environment[key] = value
     environment = flatten_json(environment)
     try:
-        workflow = execution_summary[workflow_key]
+        workflow = summary[workflow_key]
         workflow_json, nodes_json = parse_workflow(environment, workflow)
         workflows = json_normalize(workflow_json)
         nodes = json_normalize(nodes_json)
@@ -77,4 +85,10 @@ def json_to_dataframe(filepath):
         sys.stderr.write(str(e) + "\n")
         raise KeyError
 
-    return nodes, workflows
+    return workflows, nodes
+
+
+def get_nodes_and_workflows(filepath):
+    data = open(filepath, encoding="utf8").read()
+    summary = json.loads(data)
+    return json_to_dataframe(summary)

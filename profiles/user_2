@@ -3,7 +3,7 @@
 name
 type
 graphDepth
-parentId
+factoryKey.className
 workflow_name
 executionStatistics.lastExecutionStartTime
 executionStatistics.executionCountSinceReset
