@@ -23,6 +23,9 @@ def test_flatten_json():
     assert flatten_json(nodes_json[0]) == {'id': 1, 'name': 'node1'}
     assert flatten_json(nodes_json[1]) == {'execution.duration': 5.5, 'id': 2, 'name': 'node1'}
 
+    # edge cases
+    assert flatten_json({}) == {}
+
 
 def test_parse_workflow():
     workflow_json_result, node_json_result = parse_workflow(environment_json, workflows_json)
@@ -34,6 +37,11 @@ def test_parse_workflow():
         {'execution.duration': 5.5, 'id': 2, 'name': 'node1', 'workflow_name': 'workflow1'},
         {'id': '3:1', 'name': 'node3.1', 'workflow_name': 'sub-workflow1'},
         {'id': 3, 'name': 'node2', 'workflow_name': 'workflow1'}]
+
+    # edge cases
+    workflow_json_result, node_json_result = parse_workflow({}, {})
+    assert workflow_json_result == [{}]
+    assert node_json_result == []
 
 
 def test_json_to_dataframe():

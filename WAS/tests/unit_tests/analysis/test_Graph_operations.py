@@ -8,6 +8,9 @@ def test_create_graph():
     successors = [[2, 3], [3], [4, 5], [5], [5]]
     assert create_graph(ids, successors) == {1: [2, 3], 2: [3], 3: [4, 5], 4: [5], 5: [5]}
 
+    # edge cases
+    assert create_graph([], []) == {}
+
 
 def test_find_start_end_of_branches():
     graph = {1: [2, 3], 2: [3], 3: [4, 5], 4: [5], 5: [5]}
@@ -15,9 +18,17 @@ def test_find_start_end_of_branches():
     assert start_nodes == [1, 3]
     assert end_nodes == [3, 5]
 
+    # edge cases
+    start_nodes, end_nodes = find_start_end_of_branches({})
+    assert start_nodes == []
+    assert end_nodes == []
+
 
 def test_find_all_paths():
     graph = {1: [2, 3], 2: [3], 3: [4, 5], 4: [5], 5: [5]}
     start_node = 1
     end_node = 3
     assert find_all_paths(graph, start_node, end_node) == [[1, 2, 3], [1, 3]]
+
+    # edge cases
+    assert find_all_paths({}, start_node, end_node) == []
