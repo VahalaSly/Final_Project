@@ -1,14 +1,10 @@
 import sys
 
 
-def is_error_under_threshold(rf_type, label_values, error):
+def is_error_under_threshold(error):
     print("Error = {}".format(error))
-    if rf_type == 'classifier' and error < 0.2:
+    if error < 0.2:
         return True
-    elif rf_type == 'regressor':
-        mean_label_value = sum(abs(number) for number in label_values) / len(label_values)
-        if error < mean_label_value * 0.2:
-            return True
     return False
 
 
@@ -34,7 +30,7 @@ def process(rf_results, dataframe):
                 # get all rows of label to calculate error threshold
                 print("Label: {}".format(label_name))
                 label_values = dataframe[label_name].to_list()
-                is_error_low = is_error_under_threshold(rf_type, label_values, label_result.error)
+                is_error_low = is_error_under_threshold(label_result.error)
                 # if error is too high, the features are not returned
                 features = get_valid_prediction_features(is_error_low, label_result.features_importance)
                 label_features[label_name] = features

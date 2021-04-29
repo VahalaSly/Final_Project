@@ -18,52 +18,42 @@ def get_features_importance(rf, features):
 
 
 def random_forest(label, train_features, test_features, rf_instance):
-    train_values, test_values = label.encoded_train_test()
-    train_values = np.array(train_values)
-    test_values = np.array(test_values)
-    rf_instance.fit(train_features, train_values)
+    train_label_values, test_label_values = label.encoded_train_test()
+    train_label_values = np.array(train_label_values)
+    test_label_values = np.array(test_label_values)
+    rf_instance.fit(train_features, train_label_values)
     predictions = rf_instance.predict(test_features)
     if label.rf_type == 'classifier':
-        matches = list(np.array(predictions) == test_values)
-        mean_error = matches.count(False) / len(matches)
+        matches = list(np.array(predictions) == test_label_values)
+        error = matches.count(False) / len(matches)
     else:
-        errors = abs(predictions - test_values)
-        mean_error = np.mean(errors)
+        # we calculate the total mean error,
+        # then divide that by the mean value of the label to get a difference in percentage
+        total_prediction_error = sum(abs(predictions - test_label_values))
+        total_label_values = sum(value for value in test_label_values)
+        error = total_prediction_error / total_label_values
+        print(error)
     features_importance = get_features_importance(rf_instance, test_features.columns)
-
     predictions = label.decode(predictions)
-
     rf_result = RFResult(label_name=label.name, predictions=predictions,
-                         features_importance=features_importance, error=round(mean_error, 2))
-
+                         features_importance=features_importance, error=round(error, 2))
     return rf_result
 
 
 def predict(historical_data, new_data, rf_labels):
     results_dict = {}
-
     # drop the labels from features testing data
     all_labels = list(set().union(*rf_labels.values()))
-    try:
-        test_features = new_data.drop(all_labels, axis=1)
-    except KeyError:
-        sys.stderr.write("One of the labels provided does not exist in the testing dataset. "
-                         "Please check the input json file and try again. \n")
-        return results_dict
-
+    test_features = new_data.drop(all_labels, axis=1)
     # hot encode the categorical features and fill empty cells with -1, representing the lack of data
-    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(0),
-                                       prefix_sep="!-->")
-    hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(0),
-                                      prefix_sep="!-->")
-
+    hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(0), prefix_sep="!-->")
+    hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(0), prefix_sep="!-->")
     # inner join to match the shape between the two dataframes
     hotenc_train_feat, hotenc_test_feat = hotenc_train_feat.align(hotenc_test_feat, join='inner', axis=1)
 
     if hotenc_train_feat.empty or hotenc_test_feat.empty:
         sys.stderr.write("The dataframe couldn't provide any feature. The labels cannot be inferred. \n")
         return results_dict
-
     # for each label, encode the label and run RF
     for rf_name, labels in rf_labels.items():
         results_dict[rf_name] = []

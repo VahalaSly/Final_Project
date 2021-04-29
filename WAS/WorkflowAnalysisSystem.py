@@ -56,7 +56,7 @@ def get_filtered_dfs(features_list, labels_map, new_dataframe, hist_dataframe):
     labels = list(set().union(*labels_map.values()))
     imp_columns = list(set(features_list + labels))
     # since the historical data might not have the features...
-    # ...we use the & operator to only get the feature column if it exists
+    # ...we get the intersection between its columns and the features
     try:
         if len(features_list) > 0:
             filtered_df = new_dataframe[imp_columns].copy(deep=True)
@@ -68,7 +68,7 @@ def get_filtered_dfs(features_list, labels_map, new_dataframe, hist_dataframe):
         return filtered_df, filtered_hist_df
     except KeyError as e:
         sys.stderr.write("Failed to match requested features with input data columns. "
-                         "Make sure the desired features exist in the input data. \n")
+                         "Make sure the selected features and labels exist in the input data. \n")
         sys.stderr.write(str(e))
         sys.exit()
 

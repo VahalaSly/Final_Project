@@ -19,7 +19,7 @@ sample_larger_dataframe = pandas.DataFrame({
     'duration': [2, 3, 1, 1, 2, 3, 3]
 })
 
-mock_predictions = [4, 2, 0, 1, 2]
+mock_predictions = [1, 2, 3, 1, 1, 1]
 mock_importance = [0.3, 0.1]
 mock_feature_importance = [('id', 0.3), ('name', 0.1)]
 
@@ -47,13 +47,15 @@ def test_random_forest():
     rf_instance = MockRandomForest()
     train_features = sample_larger_dataframe
     test_features = sample_dataframe
-    label = Label(name='duration', rf_type='regressor', train_values=sample_larger_dataframe['duration'],
-                  test_values=sample_dataframe['duration'], encoder=None)
+    label_test = [1, 1, 1, 1, 1, 1]
+    label_train = [1, 2, 3, 1, 1, 2]
+    label = Label(name='duration', rf_type='regressor', train_values=label_train,
+                  test_values=label_test, encoder=None)
     result = random_forest(label, train_features, test_features, rf_instance)
     assert result.label_name == 'duration'
     assert result.predictions == mock_predictions
     assert result.features_importance == mock_feature_importance
-    assert result.error == 1.6
+    assert result.error == 0.5
 
 
 def test_predict():
