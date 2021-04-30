@@ -83,7 +83,6 @@ def json_to_dataframe(summary):
         print("Could not find mandatory key. Make sure the JSON file is correctly formatted.")
         sys.stderr.write(str(e) + "\n")
         raise KeyError
-
     return workflows, nodes
 
 
