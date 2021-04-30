@@ -1,4 +1,5 @@
 --user=user_1
---workflow_classifier=name
+--workflow_classifier=executed
+--workflow_regressor=tasksPerSecond
 --task_classifier=state
 --task_regressor=executionStatistics.executionDurationSinceStart

@@ -84,7 +84,7 @@ def analyse(paths_map,
     try:
         print("Initialising data pre-processing step...")
         workflow_df, task_df = PI.get_nodes_and_workflows(paths_map['input_file'])
-        print("Data pre-processing step successful! \n")
+        print("Data pre-processing step successful!\n")
     except (KeyError, ValueError) as e:
         sys.stderr.write("Data pre-processing step unsuccessful :( \n")
         sys.stderr.write(str(e))
@@ -110,9 +110,9 @@ def analyse(paths_map,
             workflow_results = RF.predict(workflow_filtered_hist_df,
                                           workflow_filtered_df,
                                           workflow_rf_label_map)
-            print("Random Forest step successful! \n")
+            print("Random Forest step successful!\n")
         except (KeyError, ValueError) as e:
-            sys.stderr.write("Random Forest step unsuccessful :( \n")
+            sys.stderr.write("Random Forest step unsuccessful :(\n")
             sys.stderr.write(str(e))
             sys.exit()
         ### STEP 4 ##
@@ -122,9 +122,9 @@ def analyse(paths_map,
                                                                task_filtered_df)
             new_workflow_dataframe, workflow_imp_features = PR.process(workflow_results,
                                                                        workflow_filtered_df)
-            print("Results analysis step successful! \n")
+            print("Results analysis step successful!\n")
         except (KeyError, ValueError) as e:
-            sys.stderr.write("Results analysis step unsuccessful :( \n")
+            sys.stderr.write("Results analysis step unsuccessful :(\n")
             sys.stderr.write(str(e))
             sys.exit()
         ### STEP 5 ##
@@ -136,7 +136,7 @@ def analyse(paths_map,
                                                   task_rf_label_map)
             print("Topological analysis step successful! \n")
         except (KeyError, ValueError) as e:
-            sys.stderr.write("Topological analysis step unsuccessful :( \n")
+            sys.stderr.write("Topological analysis step unsuccessful :(\n")
             sys.stderr.write(str(e))
             sys.exit()
         ## STEP 6 ##
@@ -149,11 +149,11 @@ def analyse(paths_map,
                                        branch_stats,
                                        task_stats,
                                        paths_map)
-            print("Feedback report step successful! \n")
-            print("Report file:///{} has been saved. \n".format(report.replace('\\', '/')))
+            print("Feedback report step successful!\n")
+            print("Report file:///{} has been saved.\n".format(report.replace('\\', '/')))
             print("Workflow Analysis Finished!")
         except (KeyError, ValueError) as e:
-            sys.stderr.write("Results analysis step unsuccessful :( \n")
+            sys.stderr.write("Results analysis step unsuccessful :(\n")
             sys.stderr.write(str(e))
             sys.exit()
     else:

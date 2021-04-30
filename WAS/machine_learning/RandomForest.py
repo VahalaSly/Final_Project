@@ -32,7 +32,6 @@ def random_forest(label, train_features, test_features, rf_instance):
         total_prediction_error = sum(abs(predictions - test_label_values))
         total_label_values = sum(value for value in test_label_values)
         error = total_prediction_error / total_label_values
-        print(error)
     features_importance = get_features_importance(rf_instance, test_features.columns)
     predictions = label.decode(predictions)
     rf_result = RFResult(label_name=label.name, predictions=predictions,

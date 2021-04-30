@@ -62,7 +62,6 @@ def parse_workflow(environment, workflow, workflows_json=None, nodes_json=None):
         node_json = flatten_json(flatten_json(node))
         node_json.update({'workflow_name': workflow_name})
         nodes_json.append(node_json)
-    print()
     return workflows_json, nodes_json
 
 
