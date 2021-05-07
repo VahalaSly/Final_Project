@@ -25,8 +25,8 @@ sample_larger_dataframe = pandas.DataFrame({
 
 
 def test_count_ratios_and_means():
-    assert count_ratios_and_means(sample_dataframe, 'state') == ['executed, ratio: 0.6 | ',
-                                                                 'failed, ratio: 0.4 | ']
+    assert count_ratios_and_means(sample_dataframe, 'state') == ['executed, ratio: 0.6 ',
+                                                                 'failed, ratio: 0.4 ']
     assert count_ratios_and_means(sample_dataframe, 'duration') == 3.0
 
 
@@ -41,13 +41,13 @@ def test_get_branch_statistics():
         {'branch_ids': ['0', '1', '4'],
          'branch_names': ['name0', 'name1', 'name3'],
          'branch_statistics: duration': 2.0,
-         'branch_statistics: state': ['failed, ratio: 0.75 | ',
-                                      'executed, ratio: 0.25 | ']},
+         'branch_statistics: state': ['failed, ratio: 0.75 ',
+                                      'executed, ratio: 0.25 ']},
         {'branch_ids': ['0', '2', '3', '4'],
          'branch_names': ['name0', 'name2', 'name3', 'name3'],
          'branch_statistics: duration': 1.75,
-         'branch_statistics: state': ['failed, ratio: 0.75 | ',
-                                      'executed, ratio: 0.25 | ']}]
+         'branch_statistics: state': ['failed, ratio: 0.75 ',
+                                      'executed, ratio: 0.25 ']}]
 
 
 def test_get_tasks_statistics():
@@ -55,14 +55,14 @@ def test_get_tasks_statistics():
     assert get_tasks_statistics(sample_dataframe, sample_larger_dataframe, ['state', 'duration'])[1:] == [
         {'task': 'name1',
          'task_statistics: duration': 2.0,
-         'task_statistics: state': ['failed, ratio: 1.0 | ']},
+         'task_statistics: state': ['failed, ratio: 1.0 ']},
         {'task': 'name2',
          'task_statistics: duration': 3.0,
-         'task_statistics: state': ['executed, ratio: 1.0 | ']},
+         'task_statistics: state': ['executed, ratio: 1.0 ']},
         {'task': 'name3',
          'task_statistics: duration': 2.0,
-         'task_statistics: state': ['failed, ratio: 0.6 | ',
-                                    'executed, ratio: 0.4 | ']}]
+         'task_statistics: state': ['failed, ratio: 0.6 ',
+                                    'executed, ratio: 0.4 ']}]
 
     # we assert the first value separately because it contains a NAN which does not accept the equality
     first_row = get_tasks_statistics(sample_dataframe, sample_larger_dataframe, ['state', 'duration'])[:1][0]
