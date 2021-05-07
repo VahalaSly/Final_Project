@@ -1,0 +1,4 @@
+--user=demo
+--workflow_classifier=executed
+--task_classifier=state
+--task_regressor=memory

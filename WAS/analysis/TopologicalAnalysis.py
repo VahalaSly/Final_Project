@@ -5,7 +5,7 @@ from analysis.util import Graph_operations as Go
 def count_ratios_and_means(df, column):
     if df[column].dtype == 'object':
         count = df[column].value_counts(normalize=True)
-        return ["{}, ratio: {} | ".format(value, round(ratio, 2)) for
+        return ["{}, ratio: {} ".format(value, round(ratio, 2)) for
                 value, ratio in count.items()]
     else:
         return round(df[column].mean(), 2)
