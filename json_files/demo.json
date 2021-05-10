@@ -6,23 +6,25 @@
         "name": "Node 1",
         "type": "Type 1",
         "state": "EXECUTED",
-        "executionDuration": 108,
-        "Memory": 25,
-        "successors":[
-          {"id": "2"},
-          {"id": "3"}
+        "memory": 23,
+        "successors": [
+          {
+            "id": "2"
+          },
+          {
+            "id": "4"
+          }
         ]
       },
       {
         "id": "2",
         "name": "Node 2",
-        "type": "Type 2",
+        "type": "Type 3",
         "state": "EXECUTED",
-        "executionDuration": 150,
-        "Memory": 30,
+        "memory": 50,
         "successors": [
           {
-            "id": "4"
+            "id": "3"
           }
         ]
       },
@@ -31,21 +33,23 @@
         "name": "Node 3",
         "type": "Type 3",
         "state": "EXECUTED",
-        "executionDuration": 100,
-        "Memory": 30,
-        "successors":[
-          {"id": "4"}
+        "memory": 51,
+        "successors": [
+          {
+            "id": "5"
+          }
         ]
       },
       {
         "id": "4",
         "name": "Node 4",
-        "type": "Type 3",
+        "type": "Type 4",
         "state": "EXECUTED",
-        "executionDuration": 110,
-        "Memory": 45,
-        "successors":[
-          {"id": "5"}
+        "memory": 29,
+        "successors": [
+          {
+            "id": "5"
+          }
         ]
       },
       {
@@ -53,13 +57,13 @@
         "name": "Node 5",
         "type": "Type 5",
         "state": "EXECUTED",
-        "Memory": 32,
-        "executionDuration": 140
+        "memory": 30
       }
     ],
     "name": "Demo Workflow",
-    "authorised": "True",
-    "annotation": "Annotation 1",
-    "last updated": "2017"
+    "authorised": 1,
+    "annotation": "Annotat. 1",
+    "last updated": "2017",
+    "executed": 1
   }
 }
