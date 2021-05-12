@@ -19,6 +19,14 @@ def flatten_json(nested_json):
                 flatten(item, name + str(i) + '.')
                 i += 1
         else:
+            # change true and false string values to boolean
+            # this is needed as they are picked from the CSV historical file as boolean
+            # so if they are left as strings, they do not match the new execution
+            if type(json_item) is str:
+                if json_item.lower() == 'true':
+                    json_item = True
+                elif json_item.lower() == 'false':
+                    json_item = False
             out[name[:-1]] = json_item
 
     flatten(nested_json)

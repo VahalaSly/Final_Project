@@ -61,9 +61,9 @@
       }
     ],
     "name": "Demo Workflow",
-    "authorised": 1,
+    "authorised": "TRUE",
     "annotation": "Annotat. 1",
     "last updated": "2017",
-    "executed": 1
+    "executed": "TRUE"
   }
 }
