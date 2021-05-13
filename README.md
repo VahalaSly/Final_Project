@@ -121,6 +121,6 @@ To run the tests available in the tests dir you need to install pytest using:
 
 `pip install pytest`
 
-Then, from the main WAS dir, run:
+Then, from the 'src' dir, run:
 
 `python -m pytest`
