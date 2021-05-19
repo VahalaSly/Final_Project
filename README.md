@@ -96,8 +96,12 @@ ratios (if a categorical values) or mean (if a continous numerical values).
 The WAS outputs a report containing all the above-detailed analyses in xlsx format. 
 
 
-## Packages needed
-To use the WAS, the following must be installed:
+## Requirements
+To install all the required packages, navigate to the `src` directory and run:
+
+`pip install -r requirements.txt`
+
+Otherwise, the following packages must be manually installed:
 
 pandas:
 `pip install pandas`
