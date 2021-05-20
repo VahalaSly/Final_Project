@@ -44,7 +44,7 @@ def predict(historical_data, new_data, rf_labels):
     # drop the labels from features testing data
     all_labels = list(set().union(*rf_labels.values()))
     test_features = new_data.drop(all_labels, axis=1)
-    # hot encode the categorical features and fill empty cells with -1, representing the lack of data
+    # hot encode the categorical features and fill empty cells with 0, representing the lack of data
     hotenc_train_feat = pd.get_dummies(pd.DataFrame.from_records(historical_data).fillna(0), prefix_sep="!-->")
     hotenc_test_feat = pd.get_dummies(pd.DataFrame.from_records(test_features).fillna(0), prefix_sep="!-->")
     # inner join to match the shape between the two dataframes
